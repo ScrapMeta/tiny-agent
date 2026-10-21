@@ -27,6 +27,14 @@ git clone --depth 1 https://github.com/ScrapMeta/tiny-agent.git "$D" 2>/dev/null
 
 Windows 的 git-bash 同理，`$HOME` 就是 `C:\Users\<you>`。网络受限就一次性走代理，不要反复重试超过两次。
 
+如果 clone 失败（公司网/大文件/GFW）：
+
+```bash
+# 方案 A：codeload tarball（比 git 协议更容易过）
+mkdir -p "$D" && curl -sL https://codeload.github.com/ScrapMeta/tiny-agent/tar.gz/refs/heads/main | tar xz -C "$D" --strip-components=1
+# 方案 B：问用户本机是否已有这个仓库（开发机上常见），直接把它当 $D 用
+```
+
 ## 2. 探测设备（只读，30 秒）
 
 ```bash
