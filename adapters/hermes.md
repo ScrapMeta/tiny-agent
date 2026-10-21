@@ -22,6 +22,8 @@ node scripts/install.mjs --agent hermes \
 
 安装器会：复制 `scripts/hooks/te-hook.sh` 到 `<profile>/agent-hooks/`、备份 `config.yaml`、在 `hooks:` 下补齐 7 个事件（已存在且指向 TE 脚本的条目**替换**而不是追加），其它 hook 一个不动。
 
+**作用域**：`--scope profile`（默认）= 当前 profile，靠 `hermes config path` 判断"我在哪个 profile"；`--scope global` = `~/.hermes/config.yaml`，脚本落在 `~/.hermes/agent-hooks/`，对所有 profile 生效。两者可叠加（标记去重）。
+
 **关于授权（重要）**：Hermes 的 `shell-hooks-allowlist` 是**按脚本路径**认的。
 - 新路径（如 `te-hook.sh`）第一次装完是 `not allowlisted`，**运行时不会触发**，需要重启 Hermes 时点一次同意（或启动加 `--accept-hooks`）。
 - 已经授权过的路径（比如旧脚本 `bell-robot.sh`）**改内容不会阻断**，只会提示 `script modified since approval`。

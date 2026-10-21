@@ -40,8 +40,10 @@ const CFG = {
   agent: String(arg("agent", "auto")),
   url: String(arg("url", DEFAULT_URL)).replace(/\/+$/, ""),
   token: String(arg("token", "") || ""),
+  scope: String(arg("scope", "auto")), // auto | profile | global  (project-level for non-Hermes)
   project: path.resolve(String(arg("project", process.cwd()))),
   profile: arg("profile") ? path.resolve(String(arg("profile"))) : null,
+  config: arg("config") ? path.resolve(String(arg("config"))) : null,
   dryRun: flag("dry-run"),
   undo: flag("undo"),
 };
@@ -105,6 +107,64 @@ function mergeAntigravity(list = [], command, matcher) {
   });
   if (CFG.undo) return kept;
   return [...kept, matcher ? { matcher, hooks: [{ command, timeout: 30 }] } : { command, timeout: 30 }];
+}
+
+// ---------------------------------------------------------------- target resolution
+
+function urlCandidates(input) {
+  const raw = String(input || "").trim().replace(/\/+$/, "");
+  const withScheme = /^https?:\/\//i.test(raw) ? raw : `http://${raw}`;
+  let u;
+  try {
+    u = new URL(withScheme);
+  } catch {
+    return [raw];
+  }
+  const out = [u.origin];
+  if (!u.hostname.includes(".") && u.hostname !== "localhost") out.push(`http://${u.hostname}.local`);
+  return [...new Set(out)];
+}
+
+/** try what the user said, then the .local variant; keep the first answer */
+async function resolveTarget() {
+  const tried = [];
+  for (const cand of urlCandidates(CFG.url)) {
+    tried.push(cand);
+    try {
+      const r = await fetch(`${cand}/auth`, { signal: AbortSignal.timeout(1500) });
+      if (r.ok) {
+        CFG.url = cand;
+        report.target = { url: cand, tried, ok: true };
+        if (cand.endsWith(".local")) log("  ! 用 .local 命中了；组播在别的网络/代理下会失效，建议换 IP");
+        return true;
+      }
+    } catch {
+      /* next candidate */
+    }
+  }
+  report.target = { url: CFG.url, tried, ok: false };
+  return false;
+}
+
+function hermesConfigPath(scope) {
+  if (CFG.config) return CFG.config;
+  if (CFG.profile) return path.join(CFG.profile, "config.yaml");
+  if (scope === "global") {
+    const base =
+      process.platform === "win32"
+        ? path.join(process.env.LOCALAPPDATA || path.join(os.homedir(), "AppData", "Local"), "hermes")
+        : path.join(os.homedir(), ".hermes");
+    return path.join(base, "config.yaml");
+  }
+  // profile scope: ask the running Hermes which config it uses, so "this agent" is literal
+  try {
+    const out = execFileSync("hermes", ["config", "path"], { encoding: "utf8", timeout: 20000 }).trim();
+    if (out.endsWith("config.yaml")) return out;
+  } catch {
+    /* fall through */
+  }
+  const guess = findHermesProfile();
+  return guess ? path.join(guess, "config.yaml") : null;
 }
 
 // ---------------------------------------------------------------- device probe
@@ -185,6 +245,10 @@ const adapters = {
     id: "cursor",
     detect: () => Boolean(process.env.CURSOR_TRACE_ID) || fs.existsSync(path.join(CFG.project, ".cursor")),
     run() {
+      if (CFG.scope === "global") {
+        fail("cursor: 没有用户级 hooks（只能项目级）——去掉 --scope global，或在目标项目里跑");
+        return;
+      }
       const file = path.join(CFG.project, ".cursor", "hooks.json");
       const cfg = readJson(file, { version: 1, hooks: {} });
       cfg.version = cfg.version ?? 1;
@@ -204,7 +268,9 @@ const adapters = {
     id: "claude-code",
     detect: () => Boolean(process.env.CLAUDECODE || process.env.CLAUDE_PROJECT_DIR) || fs.existsSync(path.join(CFG.project, ".claude")),
     run() {
-      const file = path.join(CFG.project, ".claude", "settings.json");
+      const file = CFG.scope === "global"
+        ? path.join(os.homedir(), ".claude", "settings.json")
+        : path.join(CFG.project, ".claude", "settings.json");
       const cfg = readJson(file, { hooks: {} });
       cfg.hooks = cfg.hooks || {};
       for (const ev of CLAUDE_EVENTS) {
@@ -222,6 +288,10 @@ const adapters = {
     id: "antigravity",
     detect: () => Boolean(process.env.ANTIGRAVITY) || fs.existsSync(path.join(CFG.project, ".agents")),
     run() {
+      if (CFG.scope === "global") {
+        fail("antigravity: 没有用户级 hooks —— 去掉 --scope global，在目标项目里跑");
+        return;
+      }
       const file = path.join(CFG.project, ".agents", "hooks.json");
       const cfg = readJson(file, {});
       const key = "tiny-engineer";
@@ -276,7 +346,9 @@ const adapters = {
     id: "gemini",
     detect: () => Boolean(process.env.GEMINI_CLI) || fs.existsSync(path.join(CFG.project, ".gemini")),
     run() {
-      const file = path.join(CFG.project, ".gemini", "settings.json");
+      const file = CFG.scope === "global"
+        ? path.join(os.homedir(), ".gemini", "settings.json")
+        : path.join(CFG.project, ".gemini", "settings.json");
       const cfg = readJson(file, {});
       cfg.hooks = cfg.hooks || {};
       const auth = CFG.token ? ` -H 'Authorization: Bearer ${CFG.token}'` : "";
@@ -305,14 +377,15 @@ const adapters = {
     id: "hermes",
     detect: () => Boolean(process.env.HERMES_PROFILE) || Boolean(findHermesProfile()),
     run() {
-      const profile = CFG.profile || findHermesProfile();
-      if (!profile) {
-        fail("hermes: no profile found — pass --profile <hermes profile dir>");
+      const scope = CFG.scope === "global" ? "global" : "profile";
+      const cfgFile = hermesConfigPath(scope);
+      if (!cfgFile) {
+        fail("hermes: 找不到当前 profile 的 config.yaml — 用 --profile <dir> 或 --config <file> 指定");
         return;
       }
-      const hooksDir = path.join(profile, "agent-hooks");
-      const cfgFile0 = path.join(profile, "config.yaml");
-      const prevText = fs.existsSync(cfgFile0) ? fs.readFileSync(cfgFile0, "utf8") : "";
+      const baseDir = path.dirname(cfgFile); // profile dir, or .../hermes for global scope
+      const hooksDir = path.join(baseDir, "agent-hooks");
+      const prevText = fs.existsSync(cfgFile) ? fs.readFileSync(cfgFile, "utf8") : "";
       // Honour the host's consent state: a script path that is already wired and
       // allowlisted keeps working when its contents change, while a brand-new path
       // stays blocked until the user re-approves. So reuse the wired name if any.
@@ -333,14 +406,16 @@ const adapters = {
         report.removed.push(script);
         show(script);
       }
-      const cfgFile = path.join(profile, "config.yaml");
       backup(cfgFile);
-      const text = fs.existsSync(cfgFile) ? fs.readFileSync(cfgFile, "utf8") : "";
-      const next = mergeHermesYaml(text, script.replace(/\\/g, "/"), CFG.undo);
+      const next = mergeHermesYaml(prevText, script.replace(/\\/g, "/"), CFG.undo);
       if (!CFG.dryRun) fs.writeFileSync(cfgFile, next);
-      show(`${cfgFile} (hooks: 7 events)`);
+      show(`${cfgFile} (hooks: 7 events, scope=${scope})`);
       report.wrote.push(`${cfgFile}#hooks`);
-      log("  ! hermes: hand-declared hooks; first run needs the shell-hooks allowlist consent");
+      report.scope = scope;
+      if (scope === "global") {
+        log("  ! 全局 hooks 对所有 profile 生效；profile 自己的 hooks 仍然会叠加（除重靠标记）");
+      }
+      log("  ! hermes: hand-declared hooks; a new script path needs the shell-hooks allowlist consent");
     },
   },
 };
@@ -453,8 +528,15 @@ const ONLY = CFG.agent === "all" || CFG.agent === "auto" ? null : [CFG.agent];
 
 log(`tiny-agent install  ${CFG.undo ? "[undo]" : "[install]"}${CFG.dryRun ? " [dry-run]" : ""}`);
 log(`  url:     ${CFG.url}`);
+log(`  scope:   ${CFG.scope}`);
 log(`  token:   ${CFG.token ? "set" : "none"}`);
 log(`  project: ${CFG.project}`);
+
+if (await resolveTarget()) {
+  log(`  target:  ${CFG.url}`);
+} else {
+  fail(`设备不可达，试过：${(report.target?.tried || []).join(" , ")}`);
+}
 
 await probeDevice();
 

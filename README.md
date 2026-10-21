@@ -8,6 +8,18 @@
 agent 事件 ──(hook)──▶ scripts/hooks/te-hook.sh ──curl──▶ POST http://<机器人IP>/anim
 ```
 
+## 一句话接入（推荐）
+
+设备先按上游流程配好网（开机 → 连 `TinyEngineer-XXXX` 热点 → 打开 `192.168.4.1` 的向导 → 选 WiFi），然后知道它的 IP 或名字。接着在任意 agent 里说：
+
+> 按照 https://github.com/ScrapMeta/tiny-agent 的说明，在本 agent 安装配置设备：`192.168.70.196`
+
+要它写全局（所有项目/所有 profile 生效）就把"本 agent"换成"全局"：
+
+> ……在全局安装配置设备：`tiny-engineer`
+
+agent 会：取包 → 探测设备 → 按自己的宿主写配置 → 自验（响一次铃）→ 回报改了哪些文件和使用说明。完整契约见 [`AGENTS.md`](AGENTS.md)。
+
 ## 现状（实测）
 
 | 项 | 值 |
