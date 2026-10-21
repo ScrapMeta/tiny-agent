@@ -73,6 +73,7 @@ node "$D/scripts/install.mjs" --agent auto --url "$DEVICE" --scope "$SCOPE"
 
 - 新路径装完是 `not allowlisted`，**运行时不触发**，必须重启 Hermes 时点一次同意（或启动加 `--accept-hooks`）。
 - 该 profile 若已有授权过的 TE 脚本路径（如 `bell-robot.sh`），安装器会**复用那个文件名**写新内容，避免为改名重新授权。
+- 若安装器报"判断不出当前 profile"（`hermes config path` 返回的是全局配置），向用户问 profile 目录，再用 `--profile <dir>`（形如 `$LOCALAPPDATA/hermes/profiles/<名字>`）；或者用户要的就是全局，那直接 `--scope global`。
 
 ## 5. 自验（不做完不要回话）
 

@@ -17,10 +17,41 @@ const arg = (n, d) => {
   const i = argv.indexOf(`--${n}`);
   return i < 0 ? d : argv[i + 1] && !argv[i + 1].startsWith("--") ? argv[i + 1] : true;
 };
-const URL_ = String(arg("url", process.env.TINY_ENGINEER_URL || "http://192.168.70.196")).replace(/\/+$/, "");
+const URL_RAW = String(arg("url", process.env.TINY_ENGINEER_URL || "http://192.168.70.196"));
+let URL_ = URL_RAW.replace(/\/+$/, "");
 const TOKEN = String(arg("token", process.env.TINY_ENGINEER_TOKEN || ""));
 const PROJECT = path.resolve(String(arg("project", process.cwd())));
 const JSON_OUT = argv.includes("--json");
+
+/** accept "192.168.70.196", "tiny-engineer" or a full URL; try <name>.local as a fallback */
+function urlCandidates(input) {
+  const raw = String(input || "").trim().replace(/\/+$/, "");
+  const withScheme = /^https?:\/\//i.test(raw) ? raw : `http://${raw}`;
+  let u;
+  try {
+    u = new URL(withScheme);
+  } catch {
+    return [raw];
+  }
+  const out = [u.origin];
+  if (!u.hostname.includes(".") && u.hostname !== "localhost") out.push(`http://${u.hostname}.local`);
+  return [...new Set(out)];
+}
+
+async function resolveBase() {
+  for (const cand of urlCandidates(URL_RAW)) {
+    try {
+      const r = await fetch(`${cand}/auth`, { signal: AbortSignal.timeout(1500) });
+      if (r.ok) {
+        URL_ = cand;
+        return true;
+      }
+    } catch {
+      /* next */
+    }
+  }
+  return false;
+}
 
 const H = TOKEN ? { authorization: `Bearer ${TOKEN}` } : {};
 const out = { ok: true, url: URL_, device: {}, agents: {}, problems: [] };
@@ -41,6 +72,8 @@ async function get(p) {
 
 // ---------------------------------------------------------------- device
 
+await resolveBase();
+out.url = URL_;
 try {
   const auth = await get("/auth");
   const health = await get("/health");

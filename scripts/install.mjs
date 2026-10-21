@@ -159,7 +159,11 @@ function hermesConfigPath(scope) {
   // profile scope: ask the running Hermes which config it uses, so "this agent" is literal
   try {
     const out = execFileSync("hermes", ["config", "path"], { encoding: "utf8", timeout: 20000 }).trim();
-    if (out.endsWith("config.yaml")) return out;
+    if (out.endsWith("config.yaml")) {
+      if (/(^|[\\/])profiles[\\/]/.test(out)) return out;
+      log("  ! `hermes config path` 给的是全局配置，判断不出当前 profile —— 用 --profile <dir> 指定");
+      return null;
+    }
   } catch {
     /* fall through */
   }
@@ -441,8 +445,7 @@ function findHermesProfile() {
     }
   }
   if (hits.length === 1) return hits[0];
-  // prefer the profile named after this repo's user intent, else none
-  return hits.find((p) => /tiny-engineer|tiny-agent/i.test(path.basename(p))) || null;
+  return null;
 }
 
 /**
