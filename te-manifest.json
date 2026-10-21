@@ -1,0 +1,131 @@
+{
+  "schema": 1,
+  "name": "tiny-agent",
+  "release": "v0.1.0",
+  "summary": "Install/config pack that connects AI coding agents to one Tiny Engineer desk robot over HTTP.",
+
+  "device": {
+    "transport": "http",
+    "default_url": "http://192.168.70.196",
+    "url_rule": "Use an IP. Never *.local: TUN proxies answer 198.18.x.x and guest WiFi blocks mDNS.",
+    "auth": {
+      "probe": "/auth",
+      "scheme": "Bearer",
+      "note": "required=false on the current unit: anyone on the LAN can drive it and reset its WiFi"
+    },
+    "probe": ["/auth", "/health", "/"],
+    "capabilities": {
+      "anim": "route:/anim",
+      "settings": "route:/settings",
+      "tests": "route:/test/servo",
+      "play": "route:/play",
+      "multi_wifi": "field:wifi_networks",
+      "access_token": "field:access_token_set"
+    },
+    "known_devices": [
+      {
+        "label": "desk",
+        "url": "http://192.168.70.196",
+        "firmware": "v0.2.0",
+        "observed": {
+          "play": false,
+          "multi_wifi": false,
+          "access_token_set": false,
+          "wifi_ssid": "WX-newst"
+        }
+      }
+    ]
+  },
+
+  "install": {
+    "command": "node scripts/install.mjs --agent {agent} --url {url}",
+    "flags": {
+      "agent": "--agent auto|cursor|claude-code|antigravity|codex|gemini|hermes|all",
+      "url": "--url",
+      "token": "--token",
+      "dry_run": "--dry-run",
+      "undo": "--undo",
+      "profile": "--profile <hermes profile dir>"
+    },
+    "guarantees": ["idempotent", "marker-scoped entries", "no PATH changes", "no daemons"],
+    "doctor": "node scripts/doctor.mjs --url {url}"
+  },
+
+  "adapters": [
+    {
+      "id": "hermes",
+      "doc": "adapters/hermes.md",
+      "detect": ["env:HERMES_PROFILE", "dir:~/.hermes", "dir:%LOCALAPPDATA%/hermes/profiles"],
+      "writes": ["<profile>/agent-hooks/te-hook.sh", "<profile>/config.yaml#hooks"],
+      "granularity": "7 lifecycle events",
+      "mechanism": "hermes agent hooks (hand-declared in config.yaml; Hermes has no `hooks add`)",
+      "extra": ["kill switch: te-hook.sh --off", "quiet until next turn after ring"]
+    },
+    {
+      "id": "cursor",
+      "doc": "adapters/cursor.md",
+      "detect": ["env:CURSOR_TRACE_ID", "dir:.cursor"],
+      "writes": [".cursor/hooks.json"],
+      "granularity": "10 events",
+      "mechanism": "npx -y tiny-engineer hook cursor",
+      "extra": ["Cursor must have Hooks enabled in settings (off by default)"]
+    },
+    {
+      "id": "claude-code",
+      "doc": "adapters/claude-code.md",
+      "detect": ["env:CLAUDECODE", "env:CLAUDE_PROJECT_DIR", "dir:.claude"],
+      "writes": [".claude/settings.json"],
+      "granularity": "13 events",
+      "mechanism": "npx -y tiny-engineer hook claude-code"
+    },
+    {
+      "id": "antigravity",
+      "doc": "adapters/antigravity.md",
+      "detect": ["dir:.agents", "env:ANTIGRAVITY"],
+      "writes": [".agents/hooks.json"],
+      "granularity": "4 events",
+      "mechanism": "npx -y tiny-engineer hook antigravity <event>",
+      "extra": ["hook must print decision JSON on stdout"]
+    },
+    {
+      "id": "codex",
+      "doc": "adapters/codex.md",
+      "detect": ["env:CODEX_HOME", "file:~/.codex/config.toml"],
+      "writes": ["~/.codex/config.toml#notify"],
+      "granularity": "turn-end only",
+      "mechanism": "root-level notify = [sh -c curl ...]",
+      "extra": ["root key must precede every [table]", "no tool-level events exist"]
+    },
+    {
+      "id": "gemini",
+      "doc": "adapters/gemini.md",
+      "detect": ["env:GEMINI_CLI", "dir:.gemini"],
+      "writes": [".gemini/settings.json"],
+      "granularity": "BeforeTool / AfterAgent / BeforeAgent / SessionStart",
+      "mechanism": "hooks.<Event>[].hooks[] type=command",
+      "extra": ["command must silence stdout", "hooks may be disabled by default; check /hooks"]
+    },
+    {
+      "id": "generic",
+      "doc": "adapters/generic.md",
+      "detect": [],
+      "writes": [],
+      "granularity": "whatever your host fires",
+      "mechanism": "curl -X POST $TE_URL/anim?name=<pose>"
+    }
+  ],
+
+  "poses": {
+    "work": ["typing", "reading", "thinking", "talking"],
+    "one_shot": ["ring", "welcome", "attention", "error", "abort", "dead", "wakeup", "sleep"],
+    "idle": "none",
+    "note": "Continuous poses persist until replaced; continuous_timeout (5 min) escalates to attention, which holds ~1 min. `none` parks the robot and drops servo PWM after 2 s."
+  },
+
+  "sharing": {
+    "one_robot_per_person": "recommended for a batch; set a unique hostname per unit",
+    "gateway": "tools/te-gateway.mjs",
+    "gateway_rules": ["lease for continuous poses", "409 busy for non-holders", "preempt ring/attention/error/abort + re-assert", "1.2 s dedupe", "/play mutex", "admin key on settings/test/setup"],
+    "gateway_test": "node tools/test-gateway.mjs --target http://192.168.70.196 --play"
+  }
+}

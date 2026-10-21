@@ -1,0 +1,562 @@
+<!doctype html>
+<html lang="zh-CN">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Tiny Engineer · 多人接入手册</title>
+<style>
+:root{
+  --bg:#0f1012; --panel:#17181c; --panel2:#1d1f24; --line:#2b2e35; --line2:#22252a;
+  --fg:#e9e7e4; --mut:#9aa0a8; --acc:#e85d04; --acc2:#ff8a3d;
+  --ok:#43b581; --warn:#e0a800; --bad:#e05561; --code:#0b0c0e;
+}
+*{box-sizing:border-box}
+html{scroll-behavior:smooth}
+body{
+  margin:0;background:var(--bg);color:var(--fg);
+  font:15px/1.68 ui-sans-serif,system-ui,-apple-system,"Segoe UI","PingFang SC","Microsoft YaHei",sans-serif;
+  -webkit-font-smoothing:antialiased;
+}
+.wrap{display:grid;grid-template-columns:230px minmax(0,1fr);gap:40px;max-width:1180px;margin:0 auto;padding:40px 28px 100px}
+@media(max-width:900px){.wrap{grid-template-columns:1fr;gap:20px;padding:24px 18px 80px}nav{position:static!important;max-height:none!important;order:2}}
+nav{position:sticky;top:28px;align-self:start;max-height:calc(100vh - 56px);overflow:auto;font-size:13px}
+nav .t{color:var(--mut);text-transform:uppercase;letter-spacing:.08em;font-size:10.5px;margin:0 0 12px}
+nav a{display:block;color:var(--mut);text-decoration:none;padding:5px 10px;border-left:2px solid transparent;border-radius:0 5px 5px 0}
+nav a:hover{color:var(--fg);background:var(--panel)}
+nav a.on{color:var(--acc2);border-left-color:var(--acc);background:var(--panel)}
+
+header{border-bottom:1px solid var(--line);padding-bottom:22px;margin-bottom:30px}
+h1{font-size:25px;margin:0 0 8px;letter-spacing:-.01em}
+h1 b{color:var(--acc)}
+.lede{color:var(--mut);font-size:14.5px;margin:0;max-width:70ch}
+.chips{display:flex;gap:8px;flex-wrap:wrap;margin-top:16px}
+.chip{font-size:11.5px;background:var(--panel);border:1px solid var(--line);border-radius:20px;padding:3px 11px;color:var(--mut)}
+.chip b{color:var(--fg);font-weight:500}
+.chip.ok{border-color:rgba(67,181,129,.35)}.chip.bad{border-color:rgba(224,85,97,.35)}
+
+h2{font-size:17px;margin:46px 0 6px;padding-top:14px;border-top:1px solid var(--line2);scroll-margin-top:20px}
+h2 .num{color:var(--acc);font-variant-numeric:tabular-nums;margin-right:9px;font-size:13px}
+h3{font-size:14px;margin:26px 0 8px;color:var(--acc2)}
+p,ul,ol{margin:9px 0}
+ul,ol{padding-left:22px}
+li{margin:4px 0}
+strong{color:#fff;font-weight:600}
+code{font-family:ui-monospace,"Cascadia Code",Consolas,monospace;font-size:12.5px;background:#24262c;border:1px solid var(--line);border-radius:4px;padding:1px 5px;color:#ffd8bd}
+a{color:var(--acc2)}
+
+table{width:100%;border-collapse:collapse;margin:14px 0;font-size:13.2px;background:var(--panel);border:1px solid var(--line);border-radius:9px;overflow:hidden}
+th{text-align:left;font-weight:500;color:var(--mut);font-size:11px;text-transform:uppercase;letter-spacing:.06em;padding:9px 12px;background:var(--panel2);border-bottom:1px solid var(--line)}
+td{padding:9px 12px;border-bottom:1px solid var(--line2);vertical-align:top}
+tr:last-child td{border-bottom:none}
+td code{white-space:nowrap}
+.tbl-scroll{overflow-x:auto;-webkit-overflow-scrolling:touch}
+
+pre{position:relative;background:var(--code);border:1px solid var(--line);border-radius:8px;padding:14px 46px 14px 16px;overflow-x:auto;font-family:ui-monospace,"Cascadia Code",Consolas,monospace;font-size:12.6px;line-height:1.62;color:#cfd3d8;margin:12px 0}
+pre .c{color:#6b7280}
+pre .k{color:#ff9d63}
+pre .s{color:#98d0a0}
+button.copy{position:absolute;top:8px;right:8px;background:#26282e;color:var(--mut);border:1px solid var(--line);border-radius:5px;padding:3px 9px;font-size:11px;cursor:pointer;font-family:inherit}
+button.copy:hover{color:var(--fg);border-color:var(--acc)}
+button.copy.done{color:var(--ok);border-color:var(--ok)}
+
+.note{border-left:3px solid var(--acc);background:rgba(232,93,4,.07);padding:11px 15px;border-radius:0 7px 7px 0;margin:15px 0;font-size:13.5px}
+.note.warn{border-color:var(--warn);background:rgba(224,168,0,.07)}
+.note.bad{border-color:var(--bad);background:rgba(224,85,97,.07)}
+.note.ok{border-color:var(--ok);background:rgba(67,181,129,.07)}
+.note .h{font-weight:600;color:#fff;display:block;margin-bottom:3px;font-size:13px}
+
+.grid2{display:grid;grid-template-columns:1fr 1fr;gap:14px}
+@media(max-width:760px){.grid2{grid-template-columns:1fr}}
+.card{background:var(--panel);border:1px solid var(--line);border-radius:10px;padding:16px 18px}
+.card h4{margin:0 0 8px;font-size:13.5px;color:var(--fg)}
+.card .sub{color:var(--mut);font-size:12.5px;margin:0 0 10px}
+.card.rec{border-color:rgba(232,93,4,.5);box-shadow:0 0 0 1px rgba(232,93,4,.12) inset}
+.badge{font-size:10.5px;text-transform:uppercase;letter-spacing:.06em;padding:2px 8px;border-radius:12px;background:rgba(232,93,4,.15);color:var(--acc2);border:1px solid rgba(232,93,4,.35);margin-left:8px;vertical-align:2px}
+.badge.gray{background:#26282e;color:var(--mut);border-color:var(--line)}
+
+.gen{background:var(--panel);border:1px solid var(--line);border-radius:10px;padding:18px;margin:16px 0}
+.gen .row{display:grid;grid-template-columns:1.6fr 1fr 1fr;gap:10px;margin-bottom:12px}
+@media(max-width:700px){.gen .row{grid-template-columns:1fr}}
+.gen label{display:block;font-size:11px;color:var(--mut);text-transform:uppercase;letter-spacing:.06em;margin-bottom:5px}
+.gen input{width:100%;background:var(--code);border:1px solid var(--line);border-radius:6px;color:var(--fg);padding:8px 10px;font:13px ui-monospace,Consolas,monospace}
+.gen input:focus{outline:none;border-color:var(--acc)}
+.tabs{display:flex;gap:4px;flex-wrap:wrap;margin:6px 0 0}
+.tabs button{background:transparent;border:1px solid var(--line);color:var(--mut);border-radius:6px 6px 0 0;border-bottom:none;padding:6px 13px;font-size:12.5px;cursor:pointer;font-family:inherit}
+.tabs button.on{background:var(--code);color:var(--acc2);border-color:var(--line);position:relative;top:1px}
+.panelbox{border:1px solid var(--line);border-radius:0 8px 8px 8px;background:var(--code);padding:0}
+.panelbox pre{border:none;margin:0;background:transparent}
+.hide{display:none}
+
+footer{margin-top:60px;padding-top:20px;border-top:1px solid var(--line2);color:var(--mut);font-size:12px}
+@media print{
+  body{background:#fff;color:#111}
+  nav{display:none}.wrap{display:block;max-width:none;padding:0}
+  pre{background:#f6f6f6;border-color:#ddd;color:#111}
+  table{background:#fff}th{background:#f2f2f2;color:#444}td{border-color:#e5e5e5}
+  h2{border-top:1px solid #ccc;page-break-after:avoid}
+  .copy{display:none}
+}
+</style>
+</head>
+<body>
+<div class="wrap">
+<nav id="toc">
+  <p class="t">目录</p>
+  <a href="#s0">先说结论</a>
+  <a href="#s1">1 · 前置条件</a>
+  <a href="#s2">2 · 三分钟接入</a>
+  <a href="#s3">3 · 命令生成器</a>
+  <a href="#s4">4 · 验证</a>
+  <a href="#s5">5 · 访问口令</a>
+  <a href="#s6">6 · 多人混用问题</a>
+  <a href="#s7">7 · 三种组织方式</a>
+  <a href="#s8">8 · 网关实测</a>
+  <a href="#s9">9 · 五台批量</a>
+  <a href="#s10">10 · 故障排查</a>
+  <a href="#s11">11 · 发给同事</a>
+</nav>
+
+<main>
+<header>
+  <h1>Tiny Engineer · <b>多人接入手册</b></h1>
+  <p class="lede">怎么让别人（以及别人的 Claude / Codex / Cursor / Gemini）用上你这台机器人；以及"多人混用"到底会不会出问题、出什么问题。下面的命令都在本机对你的机器人实测过。</p>
+  <div class="chips">
+    <span class="chip">机器人 <b>192.168.70.196</b></span>
+    <span class="chip">固件 <b>v0.2.0</b></span>
+    <span class="chip">WiFi <b>WX-newst</b></span>
+    <span class="chip ok">/anim <b>可用</b></span>
+    <span class="chip bad">/play <b>404</b></span>
+    <span class="chip bad">access_token <b>未设置</b></span>
+    <span class="chip">CLI <b>tiny-engineer 0.3.0</b></span>
+  </div>
+</header>
+
+<h2 id="s0"><span class="num">00</span>先说结论</h2>
+<ol>
+  <li><strong>机器人端什么都不用装。</strong>它是一个只认 HTTP 的小服务器。<em>要装的是每个人自己电脑上的钩子</em>（Cursor / Claude Code / Antigravity 各有一个配置文件），指向同一个 IP 即可。你的机器人已经在局域网里，别人不需要你的仓库、不需要你的电脑。</li>
+  <li><strong>现在这台是"谁都能开"的状态。</strong><code>/auth</code> 返回 <code>required:false</code>，同一网段任何人可以驱动它，也可以 <code>POST /settings/reset</code> 把它从网络上抹掉（之后只能物理重配）。多人之前，先设口令。</li>
+  <li><strong>同一台同时给 4 个人用，会出问题，但不是"崩"，是"变得没意义"。</strong>固件是单线程、无会话、只保留最新一次切换（<code>/anim</code> 最新者胜，每次至少保持 1 秒）。两个 agent 同时发姿态 → 机器人来回抽搐，且分不清是谁的回合响铃。</li>
+  <li><strong>正解取决于你的 5 台批量：一人一台。</strong>每台改 <code>hostname</code> 和口令，各人指各人的 IP。共享一台只适合"围观/演示"，或者加一层网关（第 8 节，已经写好并跑通 21 项测试）。</li>
+  <li><strong>一件必须知道的事：</strong>你这台固件是 v0.2.0，<em>没有</em> <code>POST /play</code>（说话能力），也只有<em>一个</em> WiFi 记录。要用"让机器人说话"和"5 个 WiFi 自动切换"，得刷仓库 HEAD 的新固件。</li>
+</ol>
+
+<h2 id="s1"><span class="num">01</span>前置条件（缺一个就连不上）</h2>
+<p>把这张表直接发给同事，比发教程有效。</p>
+<div class="tbl-scroll">
+<table>
+<thead><tr><th style="width:23%">条件</th><th style="width:37%">为什么</th><th>怎么自己验</th></tr></thead>
+<tbody>
+<tr><td><strong>同一 2.4 GHz 二层网络</strong></td><td>ESP32-C3 只有 2.4G 射频；不同 VLAN、访客网、开了 AP isolation 的 WiFi 都到不了它</td><td><code>curl -m 3 http://192.168.70.196/health</code> 有 JSON 就行</td></tr>
+<tr><td><strong>用 IP，别用 <code>.local</code></strong></td><td>mDNS 走组播，Windows 要 Bonjour、公司网常被禁；<em>装了 Clash / 任何 TUN 模式代理的机器会把 <code>*.local</code> 解析成 <code>198.18.x.x</code> 假地址</em>（这台机器上就踩过）</td><td><code>ping tiny-engineer.local</code> 若回 <code>198.18.</code> 开头 → 直接换 IP</td></tr>
+<tr><td><strong>绕开 HTTP 代理</strong></td><td>curl 会读 <code>http_proxy</code>，局域网请求被塞进代理就 502</td><td>curl 加 <code>--noproxy '*'</code>；Node 的 fetch 默认不走系统代理</td></tr>
+<tr><td><strong>Node 18+</strong></td><td><code>npx -y tiny-engineer</code> 靠它跑</td><td><code>node -v</code></td></tr>
+<tr><td><strong>机器人有 WiFi 且在线</strong></td><td>没配网时控制类接口返回 <code>503 wifi not configured</code></td><td><code>curl http://192.168.70.196/auth</code> → <code>wifi_configured:true</code></td></tr>
+<tr><td><strong>IP 别漂</strong></td><td>DHCP 换地址后所有人的钩子一起失效</td><td>路由器里给 <code>tiny-engineer</code> 的 MAC 做静态绑定</td></tr>
+</tbody>
+</table>
+</div>
+<div class="note warn"><span class="h">如果同事和机器人不在一个网段</span>不要在每台电脑上加静态路由——在路由器上把机器人放到大家都能到的那个 VLAN，或者（第 7 节方案 B）把网关放在一个双网卡的常开机器上，大家只连网关。</div>
+
+<h2 id="s2"><span class="num">02</span>三分钟接入（按 agent 分）</h2>
+<p>官方 CLI 覆盖 <strong>Cursor / Claude Code / Antigravity</strong>，一条 <code>setup</code> 就把钩子写进项目、把地址和口令写进用户级配置。Codex 和 Gemini CLI 官方没做集成，得手写配置——下面给的是它们各自的官方钩子机制。</p>
+
+<div class="tbl-scroll">
+<table>
+<thead><tr><th style="width:15%">Agent</th><th style="width:22%">写在哪个文件</th><th style="width:30%">命令 / 配置</th><th>映射到的事件 · 限制</th></tr></thead>
+<tbody>
+<tr>
+<td><strong>Cursor</strong></td>
+<td><code>.cursor/hooks.json</code><br><span style="color:var(--mut);font-size:12px">（项目级）</span></td>
+<td><code>npx -y tiny-engineer setup cursor --yes --url http://192.168.70.196</code></td>
+<td>11 个事件全映射：会话开始/提交提示/读文件 → <code>reading</code>，思考/压缩 → <code>thinking</code>，改文件/跑命令/子 agent → <code>typing</code>，回合结束 → <code>ring</code>，中断 → <code>abort</code>，失败 → <code>error</code>。需在 Cursor 设置里打开 Hooks。</td>
+</tr>
+<tr>
+<td><strong>Claude Code</strong></td>
+<td><code>.claude/settings.json</code></td>
+<td><code>npx -y tiny-engineer setup claude-code --yes --url http://192.168.70.196</code></td>
+<td>同上（PreToolUse / PostToolUse / Notification / Stop 等）。</td>
+</tr>
+<tr>
+<td><strong>Antigravity</strong></td>
+<td><code>.agents/hooks.json</code></td>
+<td><code>npx -y tiny-engineer setup antigravity --yes --url http://192.168.70.196</code></td>
+<td>同上；它的钩子要往 stdout 回 decision JSON，CLI 已处理。</td>
+</tr>
+<tr>
+<td><strong>Codex</strong></td>
+<td><code>~/.codex/config.toml</code><br><span style="color:var(--mut);font-size:12px">（用户级，根键）</span></td>
+<td>见下方 TOML</td>
+<td><strong>只有 <code>agent-turn-complete</code> 一个事件</strong> → 只能在回合结束时 <code>ring</code>，没有 typing/reading/thinking 的中间过程。</td>
+</tr>
+<tr>
+<td><strong>Gemini CLI</strong></td>
+<td><code>.gemini/settings.json</code><br><span style="color:var(--mut);font-size:12px">（项目或用户级）</span></td>
+<td>见下方 JSON</td>
+<td><code>BeforeTool</code>/<code>AfterTool</code> → <code>typing</code>，<code>BeforeAgent</code> → <code>reading</code>，<code>AfterAgent</code> → <code>ring</code>。部分版本钩子默认关闭。</td>
+</tr>
+<tr>
+<td><strong>Windsurf / 其他 / CI</strong></td>
+<td>你自己的脚本</td>
+<td><code>curl --noproxy '*' -m 2 -X POST "http://192.168.70.196/anim?name=typing" || true</code></td>
+<td>只有 <code>name</code> 一个参数；2 秒超时 + 忽略错误，机器人离线时不会卡住 agent。</td>
+</tr>
+</tbody>
+</table>
+</div>
+
+<h3>Codex：只有一个"回合结束"铃</h3>
+<p>Codex 的 <code>notify</code> 是 <strong>根级键</strong>，必须写在任何 <code>[table]</code> 之前；触发时把一段 JSON 作为<em>一个额外参数</em>追加在你的命令后面，所以要用 <code>sh -c</code> 吃掉它。</p>
+<pre data-copy><span class="c"># ~/.codex/config.toml —— 根键必须写在各 [table] 之前</span>
+<span class="k">notify</span> = [<span class="s">"sh"</span>, <span class="s">"-c"</span>, <span class="s">"curl -s -m 2 -X POST 'http://192.168.70.196/anim?name=ring' >/dev/null 2>&amp;1"</span>, <span class="s">"sh"</span>]</pre>
+<p style="color:var(--mut);font-size:12.5px">Windows 上把 <code>"sh"</code> 换成 <code>"C:\\Program Files\\Git\\bin\\bash.exe"</code>，或用 <code>["cmd","/c","curl -s -m 2 -X POST \"http://192.168.70.196/anim?name=ring\" >nul 2>&1"]</code>。</p>
+
+<h3>Gemini CLI：钩子写在 settings.json</h3>
+<p>结构是 <code>hooks.&lt;事件&gt;</code> → 数组，元素带 <code>matcher</code> 和 <code>hooks[]</code>；<code>matcher</code> 在工具事件里是正则（工具名是 <code>run_shell_command</code> / <code>write_file</code> 这种蛇形名）。</p>
+<pre data-copy>{
+  <span class="k">"hooks"</span>: {
+    <span class="k">"BeforeAgent"</span>: [{ <span class="k">"hooks"</span>: [{ <span class="k">"type"</span>: <span class="s">"command"</span>, <span class="k">"command"</span>: <span class="s">"curl -s -m 2 -X POST 'http://192.168.70.196/anim?name=reading' &gt;/dev/null 2&gt;&amp;1"</span>, <span class="k">"timeout"</span>: 5000 }] }],
+    <span class="k">"BeforeTool"</span>:  [{ <span class="k">"matcher"</span>: <span class="s">"write_.*|replace|run_shell_command"</span>,
+                     <span class="k">"hooks"</span>: [{ <span class="k">"type"</span>: <span class="s">"command"</span>, <span class="k">"command"</span>: <span class="s">"curl -s -m 2 -X POST 'http://192.168.70.196/anim?name=typing' &gt;/dev/null 2&gt;&amp;1"</span>, <span class="k">"timeout"</span>: 5000 }] }],
+    <span class="k">"AfterAgent"</span>:  [{ <span class="k">"hooks"</span>: [{ <span class="k">"type"</span>: <span class="s">"command"</span>, <span class="k">"command"</span>: <span class="s">"curl -s -m 2 -X POST 'http://192.168.70.196/anim?name=ring' &gt;/dev/null 2&gt;&amp;1"</span>, <span class="k">"timeout"</span>: 5000 }] }]
+  }
+}</pre>
+<div class="note warn"><span class="h">Gemini 的两个坑</span>① 钩子必须<strong>不往 stdout 写字</strong>（除最终 JSON），所以命令里 <code>&gt;/dev/null</code> 不能省，否则 Gemini 会把输出当决策解析。② 部分版本默认禁用钩子：跑起来后进 <code>/hooks</code> 面板确认这三条已注册，没有就在顶层加 <code>"hooksConfig": {"enabled": true}</code>。</div>
+
+<h2 id="s3"><span class="num">03</span>命令生成器（改三个框，复制给同事）</h2>
+<div class="gen">
+  <div class="row">
+    <div><label>机器人 / 网关地址</label><input id="g-url" value="http://192.168.70.196"></div>
+    <div><label>访问口令（可空）</label><input id="g-token" placeholder="留空 = 不发 Bearer"></div>
+    <div><label>团队标识（网关用）</label><input id="g-team" placeholder="alice"></div>
+  </div>
+  <div class="tabs" id="g-tabs">
+    <button class="on" data-k="cli">Cursor/Claude/Antigravity</button>
+    <button data-k="codex">Codex</button>
+    <button data-k="gemini">Gemini CLI</button>
+    <button data-k="curl">手写/CI</button>
+    <button data-k="verify">验证</button>
+  </div>
+  <div class="panelbox"><pre id="g-out" data-copy><span id="g-body"></span></pre></div>
+</div>
+
+<h2 id="s4"><span class="num">04</span>验证（三条命令，照着看输出）</h2>
+<pre data-copy><span class="c"># 1) 电脑 → 机器人：链路、地址、口令都对吗</span>
+npx -y tiny-engineer doctor --url http://192.168.70.196
+<span class="c"># 期望：✓ transport: http / ✓ url / ✓ health: ok ({"version":"v0.2.0"...})</span>
+
+<span class="c"># 2) 动一下（应该抬头/挥手）</span>
+npx -y tiny-engineer anim thinking
+
+<span class="c"># 3) 整条钩子链路（应该响铃，然后回 none）</span>
+echo '{"hook_event_name":"stop","status":"completed","conversation_id":"t1","generation_id":"g1"}' | npx -y tiny-engineer hook cursor</pre>
+<div class="note ok"><span class="h">本机实测结果</span>第 3 条执行后 <code>GET /anim</code> 立刻是 <code>{"animation":"ring"}</code>，3 秒后回到 <code>none</code> —— 说明 npx → 钩子映射 → HTTP → 舵机/铃声整条链是通的。</div>
+
+<h2 id="s5"><span class="num">05</span>访问口令：多人之前必须先做</h2>
+<p>当前 <code>GET /auth</code> → <code>{"required":false}</code>。这意味着同一网段任何人（包括访客、演示时投屏的同事、随手写的脚本）都能：改音量/睡眠时间、<strong>把机器人从 WiFi 上抹掉</strong>、让五个舵机全速来回甩。设一个口令就都挡住了。</p>
+<pre data-copy><span class="c"># 设口令（会立即生效，之后所有 JSON 接口都要 Bearer）</span>
+curl --noproxy '*' -X POST http://192.168.70.196/settings \
+  -H 'Content-Type: application/json' -d '{"access_token":"te-desk-2026"}'
+
+<span class="c"># 确认</span>
+curl --noproxy '*' http://192.168.70.196/auth        <span class="c"># required 变 true</span>
+
+<span class="c"># 客户端带上它（CLI 会写进用户级配置，之后所有项目共用）</span>
+npx -y tiny-engineer setup --all --yes --url http://192.168.70.196 --token te-desk-2026</pre>
+<div class="tbl-scroll">
+<table>
+<thead><tr><th style="width:26%">限制</th><th>说明</th></tr></thead>
+<tbody>
+<tr><td>只有<strong>一个</strong>共享口令</td><td>没有按人/按 agent 区分的令牌，也没有速率限制和审计。谁拿到都能全权操作，撤权只能换口令让所有人重配。</td></tr>
+<tr><td>HTML 面板仍公开</td><td>页面能打开，但它在浏览器里会先弹口令框；JSON 接口才是硬门槛。</td></tr>
+<tr><td>口令别写进 Git 仓库</td><td>用 <code>--token</code> 进用户级配置（<code>%APPDATA%\tiny-engineer\env</code> / <code>~/.config/tiny-engineer/env</code>），或系统环境变量 <code>TINY_ENGINEER_TOKEN</code>。</td></tr>
+</tbody>
+</table>
+</div>
+
+<h2 id="s6"><span class="num">06</span>多人混用：真实会发生什么</h2>
+<p>不是"并发崩溃"，是<strong>语义崩塌</strong>。全部来自固件行为，不是猜测：</p>
+<div class="tbl-scroll">
+<table>
+<thead><tr><th style="width:17%">症状</th><th style="width:30%">机制</th><th style="width:27%">多人场景下的后果</th><th>对策</th></tr></thead>
+<tbody>
+<tr><td>机器人来回抽搐</td><td>无队列，<code>/anim</code> <strong>最新者胜</strong>，每个姿态至少保持 1 秒</td><td>A 的 <code>typing</code> 和 B 的 <code>reading</code> 每秒互相顶掉，看起来像坏了</td><td>一人一台；或网关的"租约"（第 8 节）</td></tr>
+<tr><td>铃响了，但不是你</td><td><code>ring</code> 是一段约 2 秒的一次性动作，可被下一个请求打断，结束后回 <code>none</code></td><td>"回合结束"这个唯一有用的信号失去意义</td><td>一人一台；或按人分铃声/分机器人</td></tr>
+<tr><td>姿态莫名持续 5 分钟</td><td>连续姿态 <code>continuous_timeout</code>（默认 5 分钟）超时转 <code>attention</code>；<strong>同名重复 POST 会续命</strong></td><td>别人一直 <code>typing</code>，你的 <code>reading</code> 到期被拽去 <code>attention</code> 举手</td><td>按人拆开；或网关丢弃非持有者的姿态</td></tr>
+<tr><td>说话时所有人卡住</td><td>WebServer 单线程，<code>/play</code> <strong>占住连接直到音频结束</strong></td><td>一个人放 30 秒语音，其他人的钩子全部超时</td><td>网关加"说话锁"；或干脆不给多人开 /play</td></tr>
+<tr><td>机器人被"弄掉线"</td><td><code>POST /settings/reset</code> 清 WiFi，之后只能进 setup AP 物理重配</td><td>一个人手滑，全组的机器人下线</td><td>设口令 + 网关把这类路由锁成 admin only</td></tr>
+<tr><td>舵机被猛甩</td><td><code>/test/movement</code> 让五个关节依次走 +0.5 → −0.5</td><td>有人正在调机构/上螺丝时被别处触发</td><td>同上；物理上也别把机器人当公共玩具</td></tr>
+<tr><td>5 台互相打架</td><td>出厂 hostname 都是 <code>tiny-engineer</code> → <code>tiny-engineer.local</code> 撞名</td><td>谁的 <code>.local</code> 都可能是别人那台</td><td>每台改 <code>hostname</code>（第 9 节）</td></tr>
+</tbody>
+</table>
+</div>
+
+<h2 id="s7"><span class="num">07</span>三种组织方式</h2>
+<div class="grid2">
+  <div class="card rec">
+    <h4>方案 A · 一人一台 <span class="badge">推荐</span></h4>
+    <p class="sub">正好是你在做的 5 台批量。零额外软件，零争抢。</p>
+    <ul style="font-size:13px;padding-left:18px">
+      <li>每台唯一 <code>hostname</code>（te-01 … te-05）</li>
+      <li>每台独立口令（或干脆不设，因为是私有）</li>
+      <li>每人 <code>--url http://192.168.70.1X</code></li>
+      <li>路由器上做 5 条 DHCP 静态绑定</li>
+    </ul>
+    <p class="sub" style="margin-top:10px">代价：5 倍硬件成本；好处：每人一个专属"身体"，语义完整。</p>
+  </div>
+  <div class="card">
+    <h4>方案 C · 一台共享，只当"公共铃" <span class="badge gray">最低成本</span></h4>
+    <p class="sub">给整个组一个"有人干完了"的物理提示。</p>
+    <ul style="font-size:13px;padding-left:18px">
+      <li>只保留 <code>ring</code> / <code>attention</code> / <code>error</code></li>
+      <li>关掉 typing/reading/thinking（钩子里改映射，或让网关丢弃）</li>
+      <li>不要开 <code>/play</code></li>
+    </ul>
+    <p class="sub" style="margin-top:10px">代价：没有"我在这干活"的陪伴感；好处：不会抽搐，冲突面最小。</p>
+  </div>
+</div>
+<div class="card" style="margin-top:14px">
+  <h4>方案 B · 一台共享，中间加网关 <span class="badge">已实现</span></h4>
+  <p class="sub">一台机器一台机器人，但用约 400 行 Node（无依赖）把并发翻译成排队。别人只改一个地址，其余客户端不用动。</p>
+  <ul style="font-size:13px;padding-left:18px">
+    <li><strong>租约</strong>：连续姿态（typing/reading/thinking/talking）同时只有一个"持有者"，别人收到 <code>409 busy</code>——钩子本来就忽略错误，所以别人的 agent 不会被拖住，机器人也不会抽搐</li>
+    <li><strong>抢占</strong>：<code>ring/attention/error/abort/dead</code> 永远放行；约 2.6 秒后自动把持有者的姿态接回去</li>
+    <li><strong>去重</strong>：同人同姿态 1.2 秒内只发一次（对齐固件 1 秒最小保持）</li>
+    <li><strong>说话锁</strong>：<code>/play</code> 同时只允许一条流，其余 <code>409</code> + <code>Retry-After</code></li>
+    <li><strong>护栏</strong>：<code>/settings</code>、<code>/settings/reset</code>、<code>/test/*</code>、<code>/setup/*</code> 需要 <code>X-Admin-Key</code>，普通人只能动姿态</li>
+    <li><strong>面板</strong>：<code>http://网关:8080/</code> 看谁在驾驶、每人次数、最近 20 条事件</li>
+  </ul>
+</div>
+
+<h2 id="s8"><span class="num">08</span>网关：启动与实测</h2>
+<pre data-copy><span class="c"># 放在一台常开的机器上（NAS / 树莓派 / 你的电脑都行）</span>
+node out/te-gateway.mjs --target http://192.168.70.196 --port 8080 --admin-key 换成你的密钥
+
+<span class="c"># 想让别人不用改代码就统一走网关：</span>
+<span class="c">#   Windows: setx TINY_ENGINEER_URL http://&lt;网关IP&gt;:8080</span>
+<span class="c">#   macOS/Linux: export TINY_ENGINEER_URL=http://&lt;网关IP&gt;:8080</span>
+
+<span class="c"># 每个人的钩子加团队标识（不加就按来源 IP 归类）</span>
+<span class="c">#   curl/钩子里带:  -H 'X-Team-Id: alice'</span>
+
+<span class="c"># 自检（会真的动几下机器人和响一次铃）</span>
+node out/test-gateway.mjs --target http://192.168.70.196 --play</pre>
+<div class="note ok"><span class="h">对着你这台 v0.2.0 实跑的结果：21 项断言通过，0 失败，1 项跳过</span>
+通过：<code>/status</code>、<code>/health</code> 代理、面板 HTML、租约授予、非持有者 <code>409</code>、<code>409</code> 带持有者名、1.2 秒去重、<code>ring</code> 抢占成功、抢占后自动接回持有者姿态、非持有者不能清姿态、持有者可以、突发限流 <code>429</code>、<code>/settings/reset</code> 与 <code>/test/movement</code> 与 <code>/settings</code> 写操作全部 <code>403</code>、admin key 可读、租约到期自动释放、下一位可接管。<br>
+跳过：说话锁——<strong>你这台固件没有 <code>/play</code></strong>（直接打也是 <code>404</code>），刷到仓库 HEAD 的固件才会启用。</div>
+<div class="tbl-scroll">
+<table>
+<thead><tr><th style="width:22%">参数</th><th style="width:16%">默认</th><th>用途</th></tr></thead>
+<tbody>
+<tr><td><code>--target</code></td><td><code>http://192.168.70.196</code></td><td>机器人地址</td></tr>
+<tr><td><code>--port</code></td><td><code>8080</code></td><td>网关监听端口</td></tr>
+<tr><td><code>--token</code></td><td>空</td><td>机器人设了口令就填这里，网关替你带 Bearer</td></tr>
+<tr><td><code>--admin-key</code></td><td>空 = 全部禁用</td><td>解锁 settings/test/setup 类路由</td></tr>
+<tr><td><code>--lease-ttl</code></td><td><code>90</code> 秒</td><td>多久没动静就换人驾驶</td></tr>
+<tr><td><code>--rate</code> / <code>--burst</code></td><td><code>6</code> / <code>10</code></td><td>每人每秒请求数与突发上限</td></tr>
+<tr><td><code>--reassert-ms</code></td><td><code>2600</code></td><td>抢占后多久把姿态接回去</td></tr>
+<tr><td><code>--dry-run</code></td><td>关</td><td>只记录不真发（演示/调试）</td></tr>
+</tbody>
+</table>
+</div>
+
+<h2 id="s9"><span class="num">09</span>五台批量：命名与配置</h2>
+<p>出厂都是 <code>tiny-engineer</code>，五台同网必然撞名。先改名再配网，改名需要重启才生效。</p>
+<pre data-copy><span class="c"># 对每一台（先连它当前的 IP）</span>
+IP=192.168.70.196
+NAME=te-01
+TOKEN=te-01-&lt;随机串&gt;
+
+curl --noproxy '*' -X POST "http://$IP/settings" -H 'Content-Type: application/json' \
+  -d "{\"hostname\":\"$NAME\",\"access_token\":\"$TOKEN\"}"
+
+<span class="c"># 断电重启后，它会以 $NAME.local 出现（建议直接用 IP 或静态绑定）</span>
+curl --noproxy '*' "http://$IP/auth"      <span class="c"># 确认 required:true</span></pre>
+<div class="tbl-scroll">
+<table>
+<thead><tr><th style="width:12%">机器</th><th style="width:20%">hostname</th><th style="width:20%">静态 IP（示例）</th><th>归属</th></tr></thead>
+<tbody>
+<tr><td>1</td><td><code>te-01</code></td><td><code>192.168.70.201</code></td><td>你自己（主力）</td></tr>
+<tr><td>2–5</td><td><code>te-02</code>…<code>te-05</code></td><td><code>.202</code>…<code>.205</code></td><td>同事各一台</td></tr>
+</tbody>
+</table>
+</div>
+<div class="note warn"><span class="h">v0.2.0 只存一个 WiFi</span>你现在这台 <code>/settings</code> 返回的是 <code>wifi_ssid</code>（单数）。仓库 HEAD 已经支持 5 个网络（扫描后按信号强弱挑），但要刷新固件才生效。在公司/家里两边用之前，先刷固件，否则每次换地方都要重配。</div>
+
+<h2 id="s10"><span class="num">10</span>故障排查</h2>
+<div class="tbl-scroll">
+<table>
+<thead><tr><th style="width:26%">症状</th><th style="width:30%">最可能的原因</th><th>处置</th></tr></thead>
+<tbody>
+<tr><td><code>.local</code> 打不开 / ping 回 <code>198.18.x.x</code></td><td>Clash 等 TUN 代理抢答 DNS（fake-ip）</td><td>用 IP；或在代理的 <code>hosts</code> 里写死 + <code>fake-ip-filter</code> 加 <code>+.local</code>，重启代理</td></tr>
+<tr><td>curl 通，但 node/npx 报 connect timeout</td><td>curl 走了 <code>http_proxy</code>，node 不走；或反之代理拦了内网</td><td>curl 加 <code>--noproxy '*'</code>；代理里给 <code>192.168.0.0/16</code> 加直连规则</td></tr>
+<tr><td>钩子不触发，日志 <code>exit 127</code></td><td>IDE 的钩子环境 PATH 里没有 node（nvm/fnm/Volta）</td><td>用绝对路径的 node，或先用 <code>npx -y tiny-engineer doctor</code> 在同一台机器确认</td></tr>
+<tr><td>第一次很慢、偶发超时</td><td>冷 <code>npx</code> 要下包</td><td>钩子 <code>timeout</code> 给 ≥ 30（CLI 默认已这么写）；或全局装一次 <code>npm i -g tiny-engineer</code></td></tr>
+<tr><td><code>401 unauthorized</code></td><td>机器人设了口令，客户端没带</td><td><code>setup --token …</code> 写进用户配置，或设 <code>TINY_ENGINEER_TOKEN</code></td></tr>
+<tr><td><code>503 wifi not configured</code></td><td>机器人没连上 WiFi（或刚被 reset）</td><td>看 OLED 上的 IP；进 setup AP（<code>TinyEngineer-XXXX</code>）打开 <code>http://192.168.4.1/config</code></td></tr>
+<tr><td>机器人 5 分钟后自己举手</td><td><code>continuous_timeout</code> 到了</td><td>加大它，或让 agent 定期重发同名姿态续命</td></tr>
+<tr><td><code>/play</code> 返回 <code>404 not found</code></td><td>v0.2.0 没这个路由</td><td>刷仓库 HEAD 固件；在那之前"让机器人说话"不可用</td></tr>
+<tr><td>IP 天天变</td><td>DHCP 租约换地址</td><td>路由器 MAC 绑定</td></tr>
+</tbody>
+</table>
+</div>
+
+<h2 id="s11"><span class="num">11</span>发给同事的那一段</h2>
+<p>复制下面这段就行，不用发整份文档。</p>
+<pre data-copy id="share">我桌上那台 Tiny Engineer 机器人已经挂在局域网了：http://192.168.70.196
+
+想让你自己的 agent 带动它，三步：
+
+1) 确认你能连上（要同一个 2.4G 网络，别开代理）：
+   curl -m 3 http://192.168.70.196/health
+
+2) 在你要用的项目目录里装钩子（Cursor / Claude Code / Antigravity）：
+   npx -y tiny-engineer setup --all --yes --url http://192.168.70.196
+   用 Codex 只能做到"回合结束响铃"，Gemini CLI 要手写 settings.json，找我要片段。
+
+3) 验证（机器人会抬头，然后响一下铃）：
+   npx -y tiny-engineer doctor --url http://192.168.70.196
+   echo '{"hook_event_name":"stop"}' | npx -y tiny-engineer hook cursor
+
+注意：
+- 地址请用 IP，不要用 tiny-engineer.local（会被代理/DNS 抢答）。
+- 机器人只有一台，谁先发连续姿态谁占用；别人会被拒绝，不会把它弄坏。
+- 不要调 /settings、/settings/reset、/test/*：那会改配置或让五个舵机猛甩。</pre>
+
+<footer>
+  <p>基于本机实测：机器人 <code>192.168.70.196</code>（固件 v0.2.0，<code>/auth</code> required=false，无 <code>/play</code>）· <code>tiny-engineer</code> CLI 0.3.0 · <code>te-gateway.mjs</code> 21/21 断言通过（说话锁因固件缺路由跳过）。</p>
+  <p>协议细节以仓库 <code>docs/api.md</code>、<code>docs/integration.md</code> 为准；Codex 的 <code>notify</code> 与 Gemini 的 hooks 结构引自各自官方配置文档。</p>
+</footer>
+</main>
+</div>
+
+<script>
+// ---- copy buttons
+document.querySelectorAll('pre[data-copy]').forEach(pre => {
+  const b = document.createElement('button');
+  b.className = 'copy'; b.textContent = '复制';
+  b.onclick = async () => {
+    const clone = pre.cloneNode(true);
+    clone.querySelectorAll("button.copy").forEach(x => x.remove());
+    const txt = (clone.textContent || "").trimEnd();
+    try { await navigator.clipboard.writeText(txt); }
+    catch { const ta = document.createElement('textarea'); ta.value = txt; document.body.appendChild(ta); ta.select(); document.execCommand('copy'); ta.remove(); }
+    b.textContent = '已复制'; b.classList.add('done');
+    setTimeout(() => { b.textContent = '复制'; b.classList.remove('done'); }, 1400);
+  };
+  pre.appendChild(b);
+});
+
+// ---- generator
+const urlEl = document.getElementById('g-url');
+const tokEl = document.getElementById('g-token');
+const teamEl = document.getElementById('g-team');
+const out = document.getElementById('g-body');
+let mode = 'cli';
+
+function render() {
+  const url = (urlEl.value || 'http://192.168.70.196').trim().replace(/\/+$/, '');
+  const token = (tokEl.value || '').trim();
+  const team = (teamEl.value || '').trim();
+  const tokFlag = token ? ` --token ${token}` : '';
+  const auth = token ? ` -H 'Authorization: Bearer ${token}'` : '';
+  const teamHdr = team ? ` -H 'X-Team-Id: ${team}'` : '';
+  const pick = (n) => `curl --noproxy '*' -s -m 2 -X POST '${url}/anim?name=${n}'${auth}${teamHdr} >/dev/null 2>&1`;
+  let s = '';
+
+  if (mode === 'cli') {
+    s = [
+      '# 在每个要用的项目目录里跑一次；URL/口令写进用户级配置，之后所有项目共用',
+      `npx -y tiny-engineer setup --all --yes --url ${url}${tokFlag}`,
+      '',
+      '# 只装某一个（cursor | claude-code | antigravity）',
+      `npx -y tiny-engineer setup cursor --yes --url ${url}${tokFlag}`,
+      '',
+      '# 先看会改哪些文件，不落盘',
+      'npx -y tiny-engineer setup --all --dry-run',
+      '',
+      '# 卸掉（只删 Tiny Engineer 的条目，不动别人的钩子）',
+      'npx -y tiny-engineer uninstall --all --yes',
+    ].join('\n');
+  } else if (mode === 'codex') {
+    const inner = `curl -s -m 2 -X POST '${url}/anim?name=ring'${auth} >/dev/null 2>&1`;
+    s = [
+      '# ~/.codex/config.toml —— 根键必须写在所有 [table] 之前',
+      `notify = ["sh", "-c", "${inner}", "sh"]`,
+      '',
+      '# Codex 只发 agent-turn-complete 一个事件：只能做到"回合结束响铃"',
+      '# Windows 把 "sh" 换成 "C:/Program Files/Git/bin/bash.exe"',
+      '',
+      '# 手动验证（应该响铃后回到 none）',
+      `sh -c "${inner}" '{"type":"agent-turn-complete"}'`,
+    ].join('\n');
+  } else if (mode === 'gemini') {
+    const cfg = {
+      hooks: {
+        BeforeAgent: [{ hooks: [{ type: 'command', command: pick('reading'), timeout: 5000 }] }],
+        BeforeTool: [{ matcher: 'write_.*|replace|run_shell_command', hooks: [{ type: 'command', command: pick('typing'), timeout: 5000 }] }],
+        AfterAgent: [{ hooks: [{ type: 'command', command: pick('ring'), timeout: 5000 }] }],
+      },
+    };
+    s = [
+      '# .gemini/settings.json（项目级）或 ~/.gemini/settings.json（用户级）',
+      JSON.stringify(cfg, null, 2),
+      '',
+      '# 命令必须吞掉 stdout（>/dev/null），否则 Gemini 会把输出当决策 JSON 解析',
+      '# 生效后进 /hooks 面板确认三条已注册；没生效就在顶层加 "hooksConfig": {"enabled": true}',
+    ].join('\n');
+  } else if (mode === 'curl') {
+    s = [
+      '# 任何能发 HTTP 的东西',
+      pick('typing'),
+      pick('ring'),
+      '',
+      '# name 取值：typing reading thinking talking ring welcome attention error abort dead wakeup sleep none',
+      '# 2 秒超时 + 忽略错误：机器人不在线也不拖住 agent',
+      '',
+      '# 读当前姿态 / 健康',
+      `curl --noproxy '*' -s -m 2 '${url}/anim'${auth}`,
+      `curl --noproxy '*' -s -m 2 '${url}/health'${auth}`,
+    ].join('\n');
+  } else {
+    s = [
+      '# 1) 链路 / 地址 / 口令',
+      `npx -y tiny-engineer doctor --url ${url}${tokFlag}`,
+      '',
+      '# 2) 动一下（应抬头）',
+      'npx -y tiny-engineer anim thinking',
+      '',
+      '# 3) 整条钩子链路（应响铃，3 秒后回到 none）',
+      `echo '{"hook_event_name":"stop","status":"completed","conversation_id":"t1","generation_id":"g1"}' \\`,
+      '  | npx -y tiny-engineer hook cursor',
+      '',
+      '# 走网关时：看谁在驾驶、我是谁',
+      `curl -s '${url}/status' | head -c 400`,
+    ].join('\n');
+  }
+  out.textContent = s;
+}
+
+document.querySelectorAll('#g-tabs button').forEach(b => {
+  b.onclick = () => {
+    document.querySelectorAll('#g-tabs button').forEach(x => x.classList.remove('on'));
+    b.classList.add('on');
+    mode = b.dataset.k;
+    render();
+  };
+});
+[urlEl, tokEl, teamEl].forEach(el => el.addEventListener('input', render));
+render();
+
+// ---- toc highlight
+const links = [...document.querySelectorAll('nav a')];
+const heads = links.map(a => document.querySelector(a.getAttribute('href'))).filter(Boolean);
+const io = new IntersectionObserver(es => {
+  es.forEach(e => {
+    if (!e.isIntersecting) return;
+    links.forEach(a => a.classList.toggle('on', a.getAttribute('href') === '#' + e.target.id));
+  });
+}, { rootMargin: '-10% 0px -80% 0px' });
+heads.forEach(h => io.observe(h));
+</script>
+</body>
+</html>

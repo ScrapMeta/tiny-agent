@@ -1,0 +1,24 @@
+# tiny-agent — 让 AI agent 驱动一台 Tiny Engineer 桌面机器人
+
+机器人：ESP32-C3，只认 HTTP。`POST /anim?name=typing` 就动。
+本仓库不包含固件源码（上游 jamro/tiny-engineer），只包含硬件资料 + 各 agent 的接入配置。
+
+## 给 agent 的入口
+- /AGENTS.md          操作契约：探测 → 安装 → 自验 → 回报（先读这个）
+- /te-manifest.json   机器可读清单：设备能力、适配器、命令
+- /adapters/          每个 agent 一份：hermes.md cursor.md claude-code.md antigravity.md codex.md gemini.md generic.md
+- /scripts/install.mjs  幂等安装器（--dry-run / --undo）
+- /scripts/doctor.mjs   设备能力 + 本机配置自检
+
+## 给人类的入口
+- /README.md            现状、三十秒接入、目录
+- /docs/onboarding/     中文接入手册（自包含 HTML，可双击打开）
+- /docs/hardware/       组装手册、BOM、走线、舵机测试件
+- /docs/firmware/       v0.2.0 离线固件
+- /docs/network.md      IP / mDNS / 代理 / token 的坑
+
+## 硬事实（不要假设）
+- 使用 IP，不要用 *.local（TUN 代理会答 198.18.x.x）
+- 当前设备 access_token 未设置：/auth required=false
+- 当前固件 v0.2.0：没有 POST /play，只保存 1 个 WiFi
+- 固件单线程、无队列，/anim 最新者胜；一台机器人不要多人同时驱动

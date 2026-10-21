@@ -1,0 +1,21 @@
+# keep the repo LF-clean: shell scripts run on bash, hooks are executed verbatim
+* text=auto eol=lf
+*.sh   text eol=lf
+*.mjs  text eol=lf
+*.js   text eol=lf
+*.json text eol=lf
+*.md   text eol=lf
+*.mdc  text eol=lf
+*.toml text eol=lf
+*.bat  text eol=crlf
+*.cmd  text eol=crlf
+
+# assets: never touch
+*.bin  binary
+*.3mf  binary
+*.jpg  binary
+*.jpeg binary
+*.png  binary
+*.wav  binary
+*.pdf  binary
+*.gif  binary

@@ -1,0 +1,331 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Tiny Engineer 组装 + 调试手册（中文·带图）</title>
+<style>
+  :root { --fg:#1c1e21; --muted:#5b6570; --line:#e3e7ec; --accent:#b06a2c; --bg:#fff; --warnbg:#fff6e8; --warnline:#e0a45c; --tipbg:#eef6ff; --tipline:#8ab4e0; }
+  * { box-sizing: border-box; }
+  body { margin:0; background:#f6f7f8; color:var(--fg); font:16px/1.72 -apple-system, "Segoe UI", "Microsoft YaHei", "PingFang SC", sans-serif; }
+  .page { max-width: 940px; margin: 0 auto; background: var(--bg); padding: 40px 48px 80px; box-shadow: 0 0 0 1px var(--line); }
+  header h1 { font-size: 30px; margin: 0 0 6px; letter-spacing: .5px; }
+  header .sub { color: var(--muted); font-size: 14px; }
+  h2 { font-size: 21px; margin: 44px 0 12px; padding-top: 18px; border-top: 2px solid var(--line); }
+  h2 .idx { color: var(--accent); font-weight: 700; margin-right: 8px; }
+  h3 { font-size: 17px; margin: 24px 0 8px; }
+  p, li { color: #24272b; }
+  ol, ul { padding-left: 22px; }
+  li { margin: 4px 0; }
+  code { background:#f1f3f5; padding:1px 5px; border-radius:4px; font-size:14px; font-family: ui-monospace, Consolas, monospace; }
+  pre { background:#f6f8fa; border:1px solid var(--line); padding:12px 14px; border-radius:8px; overflow:auto; font-size:14px; }
+  figure { margin: 18px 0; }
+  figure img { width: 100%; height: auto; border-radius: 10px; border: 1px solid var(--line); display: block; }
+  figcaption { font-size: 13px; color: var(--muted); margin-top: 6px; text-align: center; }
+  table { border-collapse: collapse; width: 100%; margin: 12px 0; font-size: 14.5px; }
+  th, td { border: 1px solid var(--line); padding: 8px 10px; text-align: left; vertical-align: top; }
+  th { background: #f4f6f8; font-weight: 600; }
+  .box { border-left: 4px solid; padding: 10px 14px; margin: 14px 0; border-radius: 6px; font-size: 14.5px; }
+  .warn { background: var(--warnbg); border-color: var(--warnline); }
+  .tip { background: var(--tipbg); border-color: var(--tipline); }
+  .toc { background:#fafbfc; border:1px solid var(--line); border-radius:10px; padding: 14px 18px; margin: 24px 0 8px; font-size: 14.5px; }
+  .toc a { color:#24486e; text-decoration:none; margin-right: 14px; white-space: nowrap; display:inline-block; }
+  .toc a:hover { text-decoration: underline; }
+  .check li { list-style: none; }
+  .check li::before { content: "☐ "; color: var(--muted); }
+  @media print {
+    body { background:#fff; }
+    .page { box-shadow:none; max-width:none; padding: 10mm 12mm; }
+    h2 { page-break-after: avoid; }
+    figure { page-break-inside: avoid; }
+    .toc { display: none; }
+  }
+</style>
+</head>
+<body>
+<div class="page">
+
+<header>
+  <h1>Tiny Engineer 组装 + 调试手册</h1>
+  <div class="sub">中文整理版 · 按官方 <code>docs/3d/assembly.md</code> §1–§20 + <code>hardware/testing.md</code> 编排 · 图片为官方实拍（<code>assembly-images/</code>）</div>
+</header>
+
+<div class="box tip">
+  <strong>怎么用：</strong>双击本文件用浏览器打开即可看到全部 21 张图；本文件与 <code>assembly-images/</code> 文件夹必须在同一目录。要纸质版：浏览器 <code>Ctrl+P</code> → 另存 PDF。
+</div>
+
+<div class="toc">
+  <a href="#s0">开始之前</a><a href="#s1">装配总览</a><a href="#s2">§1 头</a><a href="#s3">§2 帽</a><a href="#s4">§2a 中位</a><a href="#s5">§3 颈</a><a href="#s6">§4 颈+头</a><a href="#s7">§5 胸</a><a href="#s8">§6 头上胸</a><a href="#s9">§7 腹</a><a href="#s10">§8 线+合体</a><a href="#s11">§9 椅</a><a href="#s12">§10–11 桌</a><a href="#s13">§12 电子件</a><a href="#s14">§13 ESP32</a><a href="#s15">§14 道具</a><a href="#s16">§15 接线</a><a href="#s17">§16 桌+椅</a><a href="#s18">底盖</a><a href="#s19">§17–18 臂</a><a href="#s20">§19 灯</a><a href="#s21">校准</a><a href="#s22">调试</a><a href="#s23">验收</a>
+</div>
+
+<h2 id="s0"><span class="idx">0</span>开始之前（顺序不能乱）</h2>
+<pre>接线/焊线 → 刷固件 → 桌面调中位 → 机械装配 → 装壳 → 向导校准 → 验收</pre>
+<ul>
+  <li>电子件和舵机先在<strong>桌面上</strong>接好、刷好固件；装配期间电子件<strong>不入壳</strong>，直到 §12。</li>
+  <li><strong>中位流程</strong>：只插一个舵机 → 上电 → 连 <code>TinyEngineer-XXXX</code> → <code>http://192.168.4.1/config</code> → <strong>Move all to 90°</strong> → <strong>拔掉舵机线</strong>再继续装。</li>
+  <li>工具：PH0/PH1 螺丝刀、M2 螺丝套装、5V/≥2A 电源、USB-C <strong>数据</strong>线、镊子。</li>
+</ul>
+<div class="box warn"><strong>红线：</strong>中位阶段绝对<strong>不要完成 Wi-Fi 向导</strong>。舵机范围、OLED、LED、音量、家庭 Wi-Fi 全部留到装完壳的 §20。</div>
+
+<h2 id="s1"><span class="idx">1</span>装配总览</h2>
+<table>
+  <tr><th>阶段</th><th>内容</th></tr>
+  <tr><td>1–2</td><td>Head + Hat（OLED + 头部舵机）</td></tr>
+  <tr><td>3–4</td><td>Neck 中位 → 与 Head 合体</td></tr>
+  <tr><td>5–6</td><td>Chest 两侧舵机 → 头组件上 Chest</td></tr>
+  <tr><td>7–8</td><td>Belly（最后一个舵机）→ 穿线合体</td></tr>
+  <tr><td>9</td><td>身体坐进 Chair</td></tr>
+  <tr><td>10–11</td><td>桌面堆叠 + 徽标</td></tr>
+  <tr><td>12–13</td><td>电子件入壳 → ESP32 + 冒烟测试 + LampBase</td></tr>
+  <tr><td>14</td><td>桌面道具（笔记本 / 杯子 / 铃铛）</td></tr>
+  <tr><td>15</td><td>插回舵机 + OLED（通道顺序）</td></tr>
+  <tr><td>16</td><td>Chair ↔ Desk 合体 + 底盖</td></tr>
+  <tr><td>17–18</td><td>手臂（肘关节）→ 装到胸舵机</td></tr>
+  <tr><td>19</td><td>台灯（压配）</td></tr>
+  <tr><td>20</td><td>向导 + 首启</td></tr>
+</table>
+
+<h2 id="s2"><span class="idx">§1</span>Head —— OLED + 1 号舵机</h2>
+<ol>
+  <li>撕掉 OLED 保护膜。</li>
+  <li><strong>先把 OLED 排线插上</strong>，再把它放进头壳（装进去后手够不到接口）。</li>
+  <li>取 1 个舵机（先<strong>不装舵盘</strong>，方向随意），与 OLED 一起放进 <code>Head</code> 仓位。</li>
+  <li>两根线从壳体两侧开口引出，卡进头壳背面的线卡。</li>
+</ol>
+<figure><img src="assembly-images/head_1.jpg" alt="Head 装配"><figcaption>头壳内装 OLED 与舵机，线从两侧引出并卡进背面线卡</figcaption></figure>
+
+<h2 id="s3"><span class="idx">§2</span>Hat</h2>
+<ul><li><code>Hat</code> 扣在头上，<strong>2× M2×8</strong>。拧进塑料即可，别过拧。</li></ul>
+<figure><img src="assembly-images/head_2.jpg" alt="Hat 装配"><figcaption>帽子用两颗 M2×8 固定</figcaption></figure>
+
+<h2 id="s4"><span class="idx">§2a</span>中位窗口（关键流程）</h2>
+<ul><li>电子件留在桌上。给当前舵机做中位（见 §0），做完拔线。</li><li>后面每个“中位”步骤都照此办理：<strong>中位 → 装件 → 拔线</strong>。</li></ul>
+
+<h2 id="s5"><span class="idx">§3</span>Neck</h2>
+<ol>
+  <li>第 2 个舵机（不装盘）→ <strong>中位</strong>。</li>
+  <li><code>Neck</code> 压到舵机轴上，与舵机本体<strong>垂直</strong>；中部凸起朝舵机长端（线缆侧 = 背面）。</li>
+  <li>用<strong>舵机自带螺丝</strong>固定。</li>
+  <li>六角槽放 1× <strong>M2 螺母</strong>：用<strong>大孔</strong>那个槽（机器人右侧）；小孔槽留空。</li>
+  <li>拔线。</li>
+</ol>
+<figure><img src="assembly-images/neck_1.jpg" alt="Neck 装配"><figcaption>Neck 压上舵机轴并固定，螺母放入大孔槽</figcaption></figure>
+
+<h2 id="s6"><span class="idx">§4</span>Neck 与 Head 合体</h2>
+<ol>
+  <li>给头里的舵机做<strong>中位</strong>。</li>
+  <li>两段式：先让 <code>Neck</code> 套上头部舵机轴 → 再往里推，直到螺母侧与 <code>Head</code> 齐平、侧面安装孔对正。</li>
+  <li><strong>90° 时 Neck 必须垂直于 Head</strong>，不对就先调再拧。</li>
+  <li>固定：机器人右侧 <strong>M2×8</strong> 拧进captured 螺母；左侧用<strong>舵机自带螺丝</strong>。</li>
+  <li>拔线。</li>
+</ol>
+<figure><img src="assembly-images/neck_2.jpg" alt="Neck 与 Head"><figcaption>Neck↔Head：右侧 M2×8 进螺母，左侧用舵机螺丝</figcaption></figure>
+
+<h2 id="s7"><span class="idx">§5</span>Chest —— 两侧舵机</h2>
+<ol>
+  <li><code>Chest</code> 左右侧仓各放 1 个未用舵机（不装盘，方向随意）。</li>
+  <li>每根线从前部<strong>竖直隧道</strong>穿下去，从<strong>底部</strong>出来。</li>
+  <li>每个舵机 2 颗，共 <strong>4× M2×16</strong>，别过拧。</li>
+</ol>
+<figure><img src="assembly-images/chest_1.jpg" alt="Chest 侧舵机"><figcaption>两个侧舵机，线走前部竖隧道从底部出</figcaption></figure>
+
+<h2 id="s8"><span class="idx">§6</span>头组件装到 Chest</h2>
+<ol>
+  <li><code>Neck</code> 上那颗舵机进 <code>Chest</code> <strong>中央仓</strong>。</li>
+  <li><strong>先穿线</strong>（中央隧道 → 底部）再坐进去。</li>
+  <li>头/颈的“脸”方向与胸一致（有线隧道那一侧）。</li>
+  <li><strong>2× M2×8</strong>（优先两颗；太紧就只上背面 1 颗）。</li>
+</ol>
+<figure><img src="assembly-images/chest_2.jpg" alt="头上 Chest"><figcaption>头组件装入 Chest 中央仓</figcaption></figure>
+
+<h2 id="s9"><span class="idx">§7</span>Belly —— 最后一个舵机</h2>
+<ol>
+  <li>最后 1 个舵机 → <strong>中位</strong>。</li>
+  <li><code>Belly</code> 压到舵机轴上（专用仓，不装盘）；舵机与 <code>Belly</code> <strong>垂直</strong>，长端朝 <code>Belly</code> 圆弧侧。</li>
+  <li><strong>舵机自带螺丝</strong>固定，拔线。</li>
+</ol>
+<figure><img src="assembly-images/belly_1.jpg" alt="Belly"><figcaption>Belly 压在舵机轴上，长端朝圆弧侧</figcaption></figure>
+
+<h2 id="s10"><span class="idx">§8</span>胸线穿 Belly 并合体</h2>
+<ol>
+  <li><code>Chest</code> 底部 3 根线（颈 + 左右手）：从 <code>Belly</code> <strong>上方大孔</strong>进、<strong>下方侧孔</strong>出。</li>
+  <li>保持离开 <code>Chest</code> 时的 左 → 颈 → 右 顺序（仅识别用，不是通道号）。</li>
+  <li><code>Belly</code> 圆弧朝<strong>后</strong>，贴合 <code>Chest</code> 轮廓，<strong>4× M2×8</strong>。</li>
+</ol>
+<figure><img src="assembly-images/belly_2.jpg" alt="Belly 合体"><figcaption>三根线穿过 Belly，四颗 M2×8 固定</figcaption></figure>
+
+<h2 id="s11"><span class="idx">§9</span>身体坐进 Chair</h2>
+<ol>
+  <li><code>Belly</code> 舵机进 <code>Chair</code> 专用仓，脸朝前。</li>
+  <li>舵机线走 <code>Chair</code> 竖直隧道到椅子下方。</li>
+  <li><code>SeatLeft</code> / <code>SeatRight</code> 从两侧滑入卡住身体舵机（防掉落），<strong>注意别压线</strong>。</li>
+  <li>两个椅面之间 <strong>2× M2×16</strong>。</li>
+</ol>
+<figure><img src="assembly-images/chair_1.jpg" alt="Chair"><figcaption>身体坐进椅子，两侧椅面滑入锁住</figcaption></figure>
+
+<h2 id="s12"><span class="idx">§10–11</span>桌面堆叠 + 徽标</h2>
+<ol>
+  <li><code>DeskTop</code> 嵌进 <code>DeskPad</code>，整体放 <code>Desk</code>，<strong>圆缺口朝机器人</strong>，四角 <strong>4× M2×16</strong>。</li>
+  <li><code>AiEmblem</code> 放桌面正面，<strong>2× M2×4</strong>。</li>
+</ol>
+<figure><img src="assembly-images/desk_1.jpg" alt="桌面堆叠"><figcaption>DeskTop → DeskPad → Desk，四角 M2×16</figcaption></figure>
+<figure><img src="assembly-images/emblem_1.jpg" alt="徽标"><figcaption>AiEmblem 两颗 M2×4</figcaption></figure>
+
+<h2 id="s13"><span class="idx">§12</span>电子件入壳</h2>
+<h3>路线 A（主控板）</h3>
+<ol>
+  <li>主控板坐进桌腔。</li>
+  <li>舵机、OLED <strong>先不插</strong>（§15 才插）。</li>
+  <li>喇叭接到座子<strong>或</strong>焊盘（<strong>二选一</strong>），塞进桌腔合适位置。</li>
+  <li>ESP32 先不装（§13 从桌面上方嵌）。</li>
+</ol>
+<figure><img src="assembly-images/electronics_1.jpg" alt="主控板入壳"><figcaption>主控板坐在桌腔内</figcaption></figure>
+<figure><img src="assembly-images/electronics_1b.jpg" alt="桌腔电子件"><figcaption>另一个角度：桌腔内的电子件布置</figcaption></figure>
+<h3>路线 B（模块）——用 <code>assembly-modular.md</code> 替换本节与 §13</h3>
+<ol>
+  <li>USB-C 分线板：<strong>4× M2×16 + 螺母</strong>固定在桌腔。</li>
+  <li>PCA9685：<strong>4× M2×4</strong> 固定到桌内前壁导轨。</li>
+  <li>MAX98357A：<strong>2× M2×4</strong> 固定在同一内侧壁导轨。</li>
+  <li>喇叭贴内壁/松散放。顺序：USB → PCA9685 → 功放 → 喇叭。</li>
+</ol>
+
+<h2 id="s14"><span class="idx">§13</span>ESP32 + 上电冒烟测试 + LampBase</h2>
+<ol>
+  <li>ESP32-C3-Zero 从<strong>桌面上方</strong>嵌入：引脚穿过桌面开孔、插进下方排针；按板丝印 <strong>USB</strong> 标记定向；与桌面齐平、不凸出。</li>
+  <li><strong>冒烟测试</strong>：确认方向 → 上电 → 灯亮 + 起 <code>TinyEngineer-XXXX</code> 热点 → 正常后<strong>断电</strong>。</li>
+  <li><code>LampButton</code> 放 <code>LampBase</code> 下方（从上方按 ESP32 复位键）。</li>
+  <li><code>LampBase</code> 开口对准状态灯，<strong>2× M2×8</strong>（同时压住 ESP32）。</li>
+</ol>
+<figure><img src="assembly-images/electronics_2.jpg" alt="ESP32 与灯座"><figcaption>ESP32 嵌入桌面开孔、LampBase 压住</figcaption></figure>
+
+<h2 id="s15"><span class="idx">§14</span>桌面道具</h2>
+<ol>
+  <li><strong>笔记本</strong>：<code>LaptopScreen</code> 滑进 <code>LaptopCase</code> 底面槽，<strong>1× M2×8 从桌下</strong>拧。</li>
+  <li><strong>杯子</strong>：<code>Coffee</code> 放进 <code>Mug</code>，同样 <strong>1× M2×8 从桌下</strong>。</li>
+  <li><strong>铃铛</strong>：先把 <strong>M2×16</strong> 完全拧进 <code>Bell</code>，再从桌面上方拧下去 + 桌下 <strong>M2 螺母</strong>。</li>
+</ol>
+<figure><img src="assembly-images/desk_2.jpg" alt="桌面道具"><figcaption>笔记本、杯子、铃铛固定在桌面上</figcaption></figure>
+
+<h2 id="s16"><span class="idx">§15</span>插回舵机 + OLED（最容易接错）</h2>
+<ol>
+  <li>桌子前倾让排针朝上，逐根插好舵机线与 OLED 线。</li>
+  <li><strong>通道顺序（硬性）</strong>：0 头俯仰 / 1 颈左右 / 2 左手 / 3 右手 / 4 躯干。</li>
+  <li>上电做“舵机 + OLED”冒烟测试；异常<strong>先断电</strong>再换插。</li>
+</ol>
+<table>
+  <tr><th>通道</th><th>关节</th></tr>
+  <tr><td>0</td><td>头（俯仰）</td></tr>
+  <tr><td>1</td><td>颈（左右转）</td></tr>
+  <tr><td>2</td><td>左手</td></tr>
+  <tr><td>3</td><td>右手</td></tr>
+  <tr><td>4</td><td>躯干（左右转）</td></tr>
+</table>
+<figure><img src="assembly-images/electronics_3.jpg" alt="路线 A 接线"><figcaption>路线 A：舵机与 OLED 直插主控板排针</figcaption></figure>
+<figure><img src="assembly-images/electronics_3b.jpg" alt="路线 B 接线"><figcaption>路线 B：舵机插到 PCA9685，OLED 走线束</figcaption></figure>
+
+<h2 id="s17"><span class="idx">§16</span>Chair 与 Desk 合体</h2>
+<ul><li>桌子推近椅子，孔位对正，每侧 3 颗共 <strong>6× M2×8</strong>；别硬怼，线缆避开螺丝路径。</li></ul>
+<figure><img src="assembly-images/body_1.jpg" alt="桌椅合体"><figcaption>Chair↔Desk 每侧三颗 M2×8</figcaption></figure>
+
+<h2 id="s18"><span class="idx">底盖</span>BottomCover</h2>
+<ol>
+  <li><strong>先</strong>接完线、上完 6 颗侧螺丝，断电、托住翻面。</li>
+  <li>椅子的线走既有隧道进桌腔，线圈在周界内，<strong>避开 6 个螺丝孔路径</strong>，不能夹线。</li>
+  <li>用<strong>新版 Chair</strong>（后壁下方有 2 个加固盲孔）；老版无孔需重打。</li>
+  <li>底盖平面贴桌/椅，凹坑朝外；对齐 <strong>4 个桌面孔 + 2 个椅后孔</strong>。</li>
+  <li><strong>6× M2×8</strong> 盘头/半圆头（头径 ≤4.0mm、高 ≤2.0mm），无螺母；头顶进凹坑、不凸出底面。</li>
+  <li>打印：<strong>贴合面朝下、凹坑朝上</strong>，无支撑。</li>
+</ol>
+
+<h2 id="s19"><span class="idx">§17–18</span>手臂</h2>
+<ol>
+  <li>左右各：<code>ForearmLeft</code>/<code>ForearmRight</code> + <code>UpperArm</code>，肘部 <strong>1× M2×8</strong>；<strong>打两个 UpperArm</strong>。</li>
+  <li>此步只做臂组件，<strong>先别装到胸舵机</strong>。</li>
+  <li>装之前先给两侧（手）舵机<strong>中位</strong>，再把臂组件压上舵机轴。</li>
+  <li>90° 时手在肩高、前臂朝前（朝桌）；用<strong>舵机自带螺丝</strong>固定。</li>
+</ol>
+<figure><img src="assembly-images/arms_1.jpg" alt="手臂"><figcaption>前臂与上臂在肘部用 M2×8 连接</figcaption></figure>
+<figure><img src="assembly-images/body_2.jpg" alt="装手臂"><figcaption>臂组件装到胸侧舵机，手在肩高、前臂朝前</figcaption></figure>
+
+<h2 id="s20"><span class="idx">§19</span>台灯（压配，无螺丝）</h2>
+<ul><li><code>LampCap</code> 套 <code>LampDiffuser</code> → 整体压进 <code>LampBase</code> 开口。</li></ul>
+<figure><img src="assembly-images/lamp_1.jpg" alt="台灯"><figcaption>灯罩与扩散片压配进灯座</figcaption></figure>
+
+<h2 id="s21"><span class="idx">§20</span>校准与首启（向导）</h2>
+<ol>
+  <li>上电 → 起 <code>TinyEngineer-XXXX</code> → 连上 → 打开 <code>http://192.168.4.1/config</code>。</li>
+  <li>走完向导：① 舵机安全范围（90° 状态下逐关节标 min/max）② OLED 旋转 ③ RGB 顺序（默认 GRB）④ 喇叭欢迎音 ⑤ 主机名 + <strong>2.4GHz</strong> Wi-Fi。</li>
+  <li>完成后<strong>断电再上电</strong>，应自动连家里网络。</li>
+  <li>验证：
+<pre>curl http://tiny-engineer.local/health
+curl -X POST "http://tiny-engineer.local/anim?name=ring"</pre></li>
+</ol>
+<div class="box warn">Wi-Fi 之后<strong>不能</strong>在普通 Config 页改，只能恢复出厂重新配。</div>
+
+<h2 id="s22"><span class="idx">§21</span>调试手册</h2>
+<h3>正常启动时序（串口 115200）</h3>
+<p><code>TINY ENGINEER</code> → 版本 → I2C（SDA=GP0/SCL=GP1）→ <strong>PCA9685 @0x40 必须成功</strong> → OLED @0x3C（失败仅警告）→ 加载设置 → 进度屏/Wi-Fi → I2S → 舵机 35°/s 缓动到中位 → <code>ROBOT READY</code> → HTTP 地址。</p>
+<div class="box tip">串口默认关闭（<code>serial_log</code> 关），无串口时靠 RGB 灯判断。</div>
+<h3>红灯闪码（致命错误，会挂起）</h3>
+<table>
+  <tr><th>闪几下</th><th>含义</th><th>检查</th></tr>
+  <tr><td>1</td><td>I2C 0x40 找不到 PCA9685</td><td>VCC 接 <strong>3V3</strong>（不是 V+）、SDA/SCL、地址、共地</td></tr>
+  <tr><td>2</td><td>MAX98357A / I2S 初始化失败</td><td>GP2/GP3/GP4 → BCLK/LRC/DIN，别短到 5V/GND</td></tr>
+</table>
+<p>节奏：亮 300ms / 灭 300ms，循环间隔 3s。</p>
+<h3>HTTP 自测</h3>
+<pre>curl http://tiny-engineer.local/health
+curl -X POST http://tiny-engineer.local/test/audio
+curl -X POST http://tiny-engineer.local/test/screen
+curl -X POST http://tiny-engineer.local/test/movement
+curl -X POST http://tiny-engineer.local/test/led
+curl -X POST "http://tiny-engineer.local/test/servo" -H "Content-Type: application/json" -d '{"index":0,"angle":90}'</pre>
+<div class="box warn"><code>/test/movement</code> 是最耗电瞬间（五舵机同动）。若热点/串口在这一刻掉线，是<strong>欠压</strong>，不是 PWM 问题。</div>
+<h3>故障速查</h3>
+<table>
+  <tr><th>现象</th><th>原因</th><th>处理</th></tr>
+  <tr><td>OLED <code>not found</code>，其余正常</td><td>0x3C 无应答</td><td>VCC=3V3、GND、SDA=GP0、SCL=GP1、地址跳线</td></tr>
+  <tr><td>红灯 1 闪 + 卡死</td><td>PCA9685 未找到</td><td>VCC 接 3V3、SDA/SCL、A0–A5</td></tr>
+  <tr><td>红灯 2 闪 + 卡死</td><td>I2S 失败</td><td>GP2/3/4 接线</td></tr>
+  <tr><td>有动作、没声音</td><td>功放 / 喇叭 / LittleFS</td><td>Vin=5V；喇叭只在 SPK±；同版本重刷</td></tr>
+  <tr><td>舵机抖/弱/复位</td><td>供电不足</td><td>5V≥2A、eFuse ~2A 限流、线径</td></tr>
+  <tr><td><code>.local</code> 打不开</td><td>mDNS</td><td>用 OLED 上的 IP；<code>curl -4</code></td></tr>
+  <tr><td>OLED 显示 Join AP</td><td>没连上家网</td><td>重走向导（2.4GHz）</td></tr>
+  <tr><td>接口返回 503</td><td>Wi-Fi 未保存</td><td>先完成向导</td></tr>
+  <tr><td>agent hook 不动</td><td>Node / 超时</td><td>Node 18+；timeout ≥30s；<code>tiny-engineer doctor</code></td></tr>
+</table>
+<h3>舵机安全范围（装好后必须遵守）</h3>
+<table>
+  <tr><th>#</th><th>关节</th><th>动作</th><th>安全范围（默认）</th></tr>
+  <tr><td>0</td><td>头</td><td>俯仰</td><td>60–130°</td></tr>
+  <tr><td>1</td><td>颈</td><td>左右</td><td>40–130°</td></tr>
+  <tr><td>2</td><td>左手</td><td>抬/落</td><td>45–135°</td></tr>
+  <tr><td>3</td><td>右手</td><td>抬/落（反向刻度）</td><td>35–125°</td></tr>
+  <tr><td>4</td><td>躯干</td><td>左右</td><td>40–130°</td></tr>
+</table>
+<ul>
+  <li>这是安装后的机械安全范围（默认值，向导可改并存入 NVS）。<strong>不要盲打 0–180°</strong>——会堵转、崩齿、拉崩 5V。</li>
+  <li>找限位：setup AP 模式 <code>/setup/servo</code> 可用 0–180°；调好后只用安全范围。</li>
+  <li>空闲 2 秒后固件<strong>释放 PWM</strong>，舵机变软（头可能下垂）——设计行为，不是故障。</li>
+  <li>左右手刻度相反：左手角度大 = 抬起，右手角度大 = 落下（打字：左 max、右 min）。</li>
+</ul>
+
+<h2 id="s23"><span class="idx">§22</span>验收清单</h2>
+<ul class="check">
+  <li><code>GET /health</code> 返回 OK，OLED 显示 IP</li>
+  <li><code>POST /anim?name=ring</code>：摇铃 + 有声音</li>
+  <li>五个关节在安全范围内动作顺畅、无异响</li>
+  <li>装壳后无夹线、底盖平齐、六颗螺丝到位</li>
+  <li>断电重启自动连 Wi-Fi（无需重新配网）</li>
+  <li>（可选）<code>npx -y tiny-engineer setup</code> hook 能触发动作</li>
+</ul>
+
+<p style="margin-top:40px;color:#5b6570;font-size:13px;border-top:1px solid #e3e7ec;padding-top:12px">
+原文索引：<code>docs/3d/assembly.md</code>（§1–§20 + 底盖）· <code>docs/hardware/testing.md</code> · <code>docs/hardware/power.md</code> ·
+<code>docs/hardware/servos.md</code> · <code>docs/robot-movement.md</code> · <code>docs/3d/assembly-modular.md</code>（路线 B）。
+本页为中文整理，步骤与螺丝规格按原文，未改动。
+</p>
+
+</div>
+</body>
+</html>

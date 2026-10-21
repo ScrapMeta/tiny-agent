@@ -1,0 +1,37 @@
+<!doctype html>
+<meta charset="utf-8">
+<style>
+  body { margin:0; font-family: inherit; color: var(--foreground, #14161a); background: transparent; }
+  .wrap { display:flex; gap:26px; align-items:flex-start; }
+  table { border-collapse: collapse; font-size: 12.5px; margin-top: 4px; }
+  th, td { text-align:left; padding: 4px 10px; border-bottom: 1px solid var(--border, #d9dee5); }
+  th { color: var(--muted-foreground, #5b6470); font-weight:600; }
+  td.num { font-variant-numeric: tabular-nums; }
+  .ok { color: #1a9c5b; font-weight:600; }
+  .bad { color: #d9534f; font-weight:600; }
+  h3 { font-size: 13px; margin: 0 0 6px; letter-spacing:.02em; color: var(--muted-foreground, #5b6470); }
+  .note { font-size: 12px; color: var(--muted-foreground, #5b6470); max-width: 330px; line-height:1.55; }
+  code { font-size: 11.5px; background: var(--card, #eef1f5); padding: 1px 4px; border-radius: 3px; }
+</style>
+<div class="wrap">
+  <div>
+    <svg width="620" height="530" viewBox="0 0 620 530"><defs><marker id="a" markerWidth="5" markerHeight="5" refX="2.5" refY="2.5" orient="auto"><path d="M0 0 L5 2.5 L0 5 z" fill="var(--muted-foreground, #5b6470)"/></marker></defs><path d="M 231.65 438.00 L 224.05 438.00 L 224.05 437.37 L 168.00 271.79 L 168.00 248.00 L 224.05 413.58 L 224.05 58.00 L 231.65 58.00 Z" fill="var(--accent, #2f6fed)" fill-opacity="0.55" stroke="var(--foreground, #14161a)" stroke-width="1.1"/><path d="M 104.35 438.00 L 111.95 438.00 L 111.95 437.37 L 168.00 271.79 L 168.00 248.00 L 111.95 413.58 L 111.95 58.00 L 104.35 58.00 Z" fill="var(--accent, #2f6fed)" fill-opacity="0.55" stroke="var(--foreground, #14161a)" stroke-width="1.1"/><path d="M 493.65 438.00 L 477.23 438.00 L 430.00 297.95 L 430.00 248.00 L 477.69 389.42 L 477.69 58.00 L 493.65 58.00 Z" fill="var(--accent, #2f6fed)" fill-opacity="0.55" stroke="var(--foreground, #14161a)" stroke-width="1.1"/><path d="M 366.35 438.00 L 382.77 438.00 L 430.00 297.95 L 430.00 248.00 L 382.31 389.42 L 382.31 58.00 L 366.35 58.00 Z" fill="var(--accent, #2f6fed)" fill-opacity="0.55" stroke="var(--foreground, #14161a)" stroke-width="1.1"/><line x1="168.0" y1="48" x2="168.0" y2="448.0" stroke="var(--muted-foreground, #5b6470)" stroke-width="0.6" stroke-dasharray="3 4" opacity="0.6"/><line x1="430.0" y1="48" x2="430.0" y2="448.0" stroke="var(--muted-foreground, #5b6470)" stroke-width="0.6" stroke-dasharray="3 4" opacity="0.6"/><text x="84" y="24" font-size="13" font-weight="600" fill="var(--foreground, #14161a)">原始 STL · 壁厚 0.40</text><text x="346" y="24" font-size="13" font-weight="600" fill="var(--foreground, #14161a)">加厚版 · 壁厚 0.84</text><line x1="104.3" y1="468.0" x2="231.7" y2="468.0" stroke="var(--muted-foreground, #5b6470)" stroke-width="0.7" marker-start="url(#a)" marker-end="url(#a)" opacity="0.75"/><text x="168.0" y="462.0" font-size="10.5" fill="var(--muted-foreground, #5b6470)" text-anchor="middle">外径 6.70（不变）</text><line x1="111.9" y1="490.0" x2="224.1" y2="490.0" stroke="var(--muted-foreground, #5b6470)" stroke-width="0.7" marker-start="url(#a)" marker-end="url(#a)" opacity="0.75"/><text x="168.0" y="484.0" font-size="10.5" fill="var(--muted-foreground, #5b6470)" text-anchor="middle">内径 5.90</text><line x1="366.4" y1="468.0" x2="493.6" y2="468.0" stroke="var(--muted-foreground, #5b6470)" stroke-width="0.7" marker-start="url(#a)" marker-end="url(#a)" opacity="0.75"/><text x="430.0" y="462.0" font-size="10.5" fill="var(--muted-foreground, #5b6470)" text-anchor="middle">外径 6.70（不变）</text><line x1="382.3" y1="490.0" x2="477.7" y2="490.0" stroke="var(--muted-foreground, #5b6470)" stroke-width="0.7" marker-start="url(#a)" marker-end="url(#a)" opacity="0.75"/><text x="430.0" y="484.0" font-size="10.5" fill="var(--muted-foreground, #5b6470)" text-anchor="middle">内径 5.02</text><line x1="78" y1="58" x2="78" y2="438.0" stroke="var(--muted-foreground, #5b6470)" stroke-width="0.7" marker-start="url(#a)" marker-end="url(#a)"/><text x="72" y="248.0" font-size="10.5" fill="var(--muted-foreground, #5b6470)" text-anchor="middle" transform="rotate(-90 72 248.0)">20.0</text></svg>
+  </div>
+  <div>
+    <h3>剖面对比（A-A，按 1:1 比例）</h3>
+    <table>
+      <tr><th></th><th>原始</th><th>加厚版</th></tr>
+      <tr><td>外径 / 内径 (mm)</td><td class="num">6.70 / 5.90</td><td class="num">6.70 / 5.02</td></tr>
+      <tr><td>壁厚</td><td class="num">0.40 mm</td><td class="num">0.84 mm</td></tr>
+      <tr><td>0.4 喷头切片</td><td class="bad">1 条线（易被判薄壁丢弃）</td><td class="ok">2 条线，每层都有</td></tr>
+      <tr><td>切片统计</td><td class="num">无内墙 / 无填充</td><td class="num">外墙+内墙 426 s</td></tr>
+      <tr><td>体积 / 重量</td><td class="num">192 mm³ ≈ 0.24 g</td><td class="num">361 mm³ ≈ 0.46 g</td></tr>
+      <tr><td>打孔/配合</td><td colspan="2">两端外径不变，仍插入底座/灯罩的 6.98 孔位</td></tr>
+    </table>
+    <div class="note" style="margin-top:12px">
+      切片验证：Bambu Studio 2.x，A1 mini + 0.4 喷头，0.20 mm 标准配置，<code>wall_loops=2</code>。
+      原始文件每层只有 r≈3.14 的一条 0.40 线且没有 <code>Inner wall</code>；加厚版每层稳定出现
+      r≈3.12 / r≈2.72 两条线。内部那个散光锥也一起从 0.40 加厚到 0.84。
+    </div>
+  </div>
+</div>
