@@ -38,13 +38,13 @@ agent 会：取包 → 探测设备 → 按自己的宿主写配置 → 自验�
 
 | 项 | 值 |
 |---|---|
-| 机器人 | `192.168.70.196` · 固件 `v0.2.0` · WiFi `WX-newst` |
+| 机器人 | `192.168.70.196` · 固件 **`v0.2.0-28-g261adc2-dirty`**（已刷 main） · WiFi `WX-newst` |
 | `/anim` `/health` `/settings` `/test/*` | 可用 |
-| `POST /play`（念任意音频） | **不存在**（404，需刷新固件）。内置铃声/问候语仍在，见 `docs/hardware/` |
+| `POST /play`（念任意音频） | **可用**：16-bit mono 22050 Hz，实测 1.2 s 片段 1.21 s 播完 |
 | `access_token` | **未设置** —— 同网段任何人都能用，且能 `POST /settings/reset` 把 WiFi 抹掉 |
-| 已保存 WiFi | 只有 1 个（新固件支持 5 个） |
+| 已保存 WiFi | 5 个槽位，当前 1 个（`wifi_networks: ["WX-newst"]`，从旧单网络自动迁移） |
 
-> **有 `POST /play` 的固件已经编好了**：`docs/firmware/main-261adc2/`（版本 `v0.2.0-28-g261adc2`，来自上游 `main`，从未发布过 tag）。它同时带来 5 个 WiFi 记忆、`POST /servos/park`、引导式标定、USB 串口控制。刷机与复现步骤见 [`docs/firmware/BUILD.md`](docs/firmware/BUILD.md) —— 刷 app 不会丢舵机标定。
+> **已刷机**：设备现在跑 `main-261adc2`（`v0.2.0-28-g261adc2-dirty`）。舵机标定、token、WiFi 都在（NVS 未动）。复现与回退见 [`docs/firmware/BUILD.md`](docs/firmware/BUILD.md)。
 
 ## 三十秒接入
 

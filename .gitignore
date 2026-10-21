@@ -22,3 +22,6 @@ dist/
 tmp/
 *.tmp
 *.log
+
+# local device dumps (contain SSID / calibration, not for the public repo)
+docs/firmware/settings-backup-*.json

@@ -53,7 +53,7 @@ const call = async (path, { method = "GET", team, admin, body, headers = {} } = 
   return { status: res.status, json, text, headers: res.headers };
 };
 
-const gw = spawn(process.execPath, ["out/te-gateway.mjs", "--target", TARGET, "--port", String(PORT), "--admin-key", ADMIN, "--lease-ttl", "6"], {
+const gw = spawn(process.execPath, ["tools/te-gateway.mjs", "--target", TARGET, "--port", String(PORT), "--admin-key", ADMIN, "--lease-ttl", "6"], {
   stdio: ["ignore", "pipe", "pipe"],
 });
 gw.stdout.on("data", (d) => process.stdout.write(`    \x1b[90m[gw]\x1b[0m ${d.toString().trimEnd()}\n`));
@@ -145,7 +145,7 @@ try {
       console.log(`  \x1b[33mSKIP\x1b[0m firmware on ${TARGET} has no POST /play route (v0.2.0) — needs a newer build`);
     } else {
       const { readFile } = await import("node:fs/promises");
-      const wav = await readFile("out/_silence.wav");
+      const wav = await readFile("tools/fixtures-silence.wav");
       const [a, b] = await Promise.all([
         call("/play", { method: "POST", team: "alice", body: wav, headers: { "content-type": "audio/wav" } }),
         new Promise((res) => setTimeout(res, 30)).then(() => call("/play", { method: "POST", team: "bob", body: wav, headers: { "content-type": "audio/wav" } })),
