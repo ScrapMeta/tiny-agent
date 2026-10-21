@@ -115,6 +115,41 @@ verify:   ring http=200 · /anim 已回 none
 
 再补一句用户必须知道的：**装完之后事件会自动驱动机器人；`ring` 之后脚本会静默到下一轮开始，所以"铃声 = 这一轮结束"。**
 
+## 7. 动作 → 命令（用户只会说人话，你要翻译）
+
+| 用户说的 | 你执行 | 结果 |
+|---|---|---|
+| 安装 / 接入 / 配置 / 装上 / 连上 | `install.mjs --agent auto --url … --scope …` | 写入钩子 + 脚本 |
+| 卸载 / 清除 / 移除 / 断开 / 别让它动了 | `install.mjs --undo --scope … --url …` | **只删 Tiny Engineer 的配置条目**，脚本与日志保留 |
+| 彻底清除 / 清干净 / 连文件一起删 | `install.mjs --undo --purge --scope …` | 再删钩子脚本、`.te-state/`、`bell-hook.log` |
+| 检查 / 看状态 / 还在不在 / 通不通 | `doctor.mjs --url …` | 设备能力 + 本机接线 |
+| 暂停 / 静音 / 先别动（Hermes） | `<脚本路径> --off` | 立刻静默，配置不动 |
+| 恢复（Hermes） | `<脚本路径> --on` | 恢复响应 |
+| 暂停（Cursor / Claude / Gemini / Codex） | 没有全局开关，只能 `--undo`；想保留就改钩子 `timeout` 或注释条目 | |
+
+**设备名与地址是两回事**：
+
+| 用户可能说 | 你怎么处理 |
+|---|---|
+| `tiny-agent`、`Tiny Engineer`、`TE`、`小工程师`、`桌面机器人` | 这是**这套东西**的名字，不是地址 —— 仍需 IP 或 hostname |
+| `192.168.70.196`、`10.0.0.7` | 直接当 `DEVICE` |
+| `tiny-engineer`、`te-01` | 当 hostname；脚本会自动再试 `<名字>.local` |
+| "我桌上那个"、"那个机器人" | 不算地址，向用户要 IP 或 hostname |
+
+所以一句能被正确执行的话里，必须同时有 **动作** 和 **地址**：
+
+> 按 …tiny-agent 的说明，**在本 agent 卸载** tiny-agent 设备：**192.168.70.196**
+
+只有名字没有地址 → 先问地址；只有地址没有动作 → 按"安装"处理并说明。
+
+### 卸载的具体做法
+
+1. **用和安装时相同的 scope**（`profile` / `global`）和相同的 `--project`（非 Hermes 宿主），否则删不到原来那几条。
+2. `node "$D/scripts/install.mjs" --undo --scope "$SCOPE" --url "$DEVICE"`；要连文件一起清就加 `--purge`。
+3. Hermes 收尾：`hermes hooks list` 应看不到那 7 条；allowlist 里的旧记录不影响运行，要清就 `hermes hooks revoke`。
+4. 验证：`doctor.mjs` 里不该再有你刚卸掉的那一条（≥ 别的 profile / 项目可能仍然接着，属正常）。
+5. 报告：删了哪些文件、机器人现在还会不会被驱动。**注意**：如果这个 profile 装过全局 hooks（`--scope global`），卸 profile 之后全局那套仍在生效。
+
 ## 禁止（硬约束）
 
 1. **不要** `POST /settings`、`/settings/wifi`、`/settings/reset`、`/test/*`、`/setup/*`：会改配置、抹 WiFi、让五个舵机全速来回甩。当前设备没有口令，一次误调用就得物理重配。

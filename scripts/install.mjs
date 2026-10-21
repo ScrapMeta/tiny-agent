@@ -46,6 +46,7 @@ const CFG = {
   config: arg("config") ? path.resolve(String(arg("config"))) : null,
   dryRun: flag("dry-run"),
   undo: flag("undo"),
+  purge: flag("purge"), // with --undo: also delete the hook script, state dir and log
 };
 
 const log = (msg) => process.stderr.write(msg + "\n");
@@ -405,10 +406,19 @@ const adapters = {
           fs.chmodSync(script, 0o755);
         }
         show(script);
-      } else if (fs.existsSync(script) && !CFG.dryRun) {
+      } else if (fs.existsSync(script) && CFG.purge && !CFG.dryRun) {
         fs.rmSync(script);
         report.removed.push(script);
         show(script);
+      }
+      if (CFG.undo && CFG.purge && !CFG.dryRun) {
+        for (const junk of [path.join(hooksDir, ".te-state"), path.join(hooksDir, "bell-hook.log")]) {
+          if (fs.existsSync(junk)) {
+            fs.rmSync(junk, { recursive: true, force: true });
+            report.removed.push(junk);
+            show(junk);
+          }
+        }
       }
       backup(cfgFile);
       const next = mergeHermesYaml(prevText, script.replace(/\\/g, "/"), CFG.undo);
