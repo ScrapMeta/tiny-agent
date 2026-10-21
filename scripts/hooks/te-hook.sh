@@ -9,9 +9,9 @@
 #
 # Behaviour
 #   - kill switch   touch .te-hook-off   (--off / --on / --status)
-#   - quiet until turn  a `ring` mutes everything (not just 20 s) until the next
-#                        pre_llm_call / on_session_start, because Hermes keeps running
-#                        bookkeeping tools (skills_*, memory) after a turn ends
+#   - quiet grace   a `ring` mutes continuous poses for TE_QUIET_SECS (20 s) so the
+#                   bell is the last thing you see; on_session_end always rings,
+#                   and the window self-heals if Hermes stops emitting pre_llm_call
 #   - 1 s gate      never posts twice inside the firmware's 1 s minimum hold
 #   - config        TINY_ENGINEER_URL/TOKEN env > %APPDATA%\tiny-engineer\env > IP
 #                   (no *.local: mDNS dies behind Clash/TUN and on guest WiFi)
@@ -43,7 +43,8 @@ STATE="$HERE/.te-state"
 RING_AT="$STATE/last-ring-ms"
 POST_AT="$STATE/last-post-ms"
 QUIET="$STATE/quiet"
-QUIET_SECS="${TE_QUIET_SECS:-300}"   # ceiling for "quiet until next turn"
+QUIET_SECS="${TE_QUIET_SECS:-20}"   # short grace after a bell; a new turn or the next
+                                    # ring clears it, and it self-heals at this cap
 DEFAULT_URL="http://192.168.70.196"
 
 [ -d "$STATE" ] || mkdir -p "$STATE" 2>/dev/null
@@ -108,7 +109,7 @@ case "${1:-}" in
     printf 'url:         %s\n' "$ROBOT"
     if [ -n "$TOKEN" ]; then printf 'token:       set\n'; else printf 'token:       none\n'; fi
     if [ -f "$OFF_FILE" ]; then printf 'kill switch: OFF (%s)\n' "$OFF_FILE"; else printf 'kill switch: armed (on)\n'; fi
-    printf 'quiet:       until next turn (max %ss)\n' "$QUIET_SECS"
+    printf 'quiet:       %ss grace after ring\n' "$QUIET_SECS"
     if [ -f "$QUIET" ]; then printf 'quiet now:   YES (ringed %ss ago)\n' "$(( ( $(now_ms) - $(<"$QUIET") ) / 1000 ))"; fi
     if [ -f "$RING_AT" ]; then
       printf 'last ring:   %ss ago\n' "$(( ( $(now_ms) - $(<"$RING_AT") ) / 1000 ))"
@@ -177,11 +178,12 @@ case "$event" in
   pre_llm_call|on_session_start) rm -f "$QUIET" ;;
 esac
 
-# Quiet until the next turn starts.
-# A fixed window was not enough: Hermes keeps running bookkeeping tools
-# (skills_list / skill_view / skill_manage / memory) 8-26 s after a turn ends,
-# and those used to wake the robot while nobody was there.
-if [ -f "$QUIET" ] && [ "$event" != "pre_llm_call" ] && [ "$event" != "on_session_start" ]; then
+# Quiet grace after a bell.
+# A fixed window, not "until the next turn": some Hermes builds stop emitting
+# pre_llm_call mid-session, and then the flag never cleared — the robot went
+# silent for the rest of the task, bell included. The cap self-heals.
+# on_session_end always passes: a bell is exactly what the quiet window protects.
+if [ -f "$QUIET" ] && [ "$event" != "pre_llm_call" ] && [ "$event" != "on_session_start" ] && [ "$event" != "on_session_end" ]; then
   q="$(<"$QUIET")"
   case "$q" in ''|*[!0-9]*) q=0 ;; esac
   if [ $(( t - q )) -lt $(( QUIET_SECS * 1000 )) ]; then

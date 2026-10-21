@@ -68,7 +68,8 @@ te-hook.sh --test     # 打一声铃
 ## 三个已解决的坑
 
 1. **铃响完还在动**：Hermes 回合结束后仍会跑后台整理（`skills_list` / `skill_view` / `skill_manage` / `memory`），它们走同一个 `pre_tool_call`。实测铃后 8–26 秒会"自己动"。
-   → `te-hook.sh` 在 `ring` 后置一个**静默标志**，只有 `pre_llm_call`（你发新消息）或 `on_session_start` 才解除，上限 300 秒。**铃声 = 这一轮最后一个动作。**
+   → `te-hook.sh` 在 `ring` 后置一个**静默窗口**（`TE_QUIET_SECS`，默认 **20 秒**），窗口内连续姿态一律丢弃；`on_session_end` **永远放行**（铃声不会被自己的静默吃掉）。
+   ⚠️ 不要做成"静默到下一轮"：这个 Hermes 会话里 `pre_llm_call` 从 18:54 起就**不再触发**了，标志会一直挂着，机器人整段任务都不动、结束也不响。固定窗口能自愈。
 2. **延迟**：早期版本每个事件 ~820 ms（`date/sed/cat/wc` 各 fork 一次），现在只用 bash 内建 + 一次 `curl`，实测 **250–370 ms**。
 3. **脚本改动后 Hermes 会要你重新同意**（`script modified since approval`）。这是供应链保护，正常；重启时点同意，或启动带 `--accept-hooks`。
 
