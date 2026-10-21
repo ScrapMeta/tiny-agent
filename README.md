@@ -40,7 +40,7 @@ agent 会：取包 → 探测设备 → 按自己的宿主写配置 → 自验�
 |---|---|
 | 机器人 | `192.168.70.196` · 固件 `v0.2.0` · WiFi `WX-newst` |
 | `/anim` `/health` `/settings` `/test/*` | 可用 |
-| `POST /play`（说话） | **不存在**（404，需刷新固件） |
+| `POST /play`（念任意音频） | **不存在**（404，需刷新固件）。内置铃声/问候语仍在，见 `docs/hardware/` |
 | `access_token` | **未设置** —— 同网段任何人都能用，且能 `POST /settings/reset` 把 WiFi 抹掉 |
 | 已保存 WiFi | 只有 1 个（新固件支持 5 个） |
 

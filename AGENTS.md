@@ -47,7 +47,7 @@ curl -s -m 3 --noproxy '*' "http://$DEVICE/" | grep -oE '/(anim|play|settings|te
 |---|---|
 | 连不上 / `health.ok` 不是 true | **停**。报"网络层不通（不同网段 / AP 隔离 / 代理吞请求 / 机器人离线）"，别继续装 |
 | `auth.required == true` 且没有口令 | **停**，向用户要 token |
-| 路由里没有 `/play` | 这台固件**不支持说话**，后面不要承诺"让它说话" |
+| 路由里没有 `/play` | 不能**念任意音频**（TTS 句子）；内置铃声/问候（ring/welcome/attention/error…）仍然会响 |
 | `provisioning == true` | 机器人还在配网热点模式，先让用户完成配网 |
 
 ## 3. 安装
