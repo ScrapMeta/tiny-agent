@@ -1,0 +1,60 @@
+{
+  "name": "cheer",
+  "description": "欢呼：双臂上举三次 + 抬头 + 身体上下，约 2.6 s",
+  "frames": [
+    {
+      "t": 0,
+      "head": 0,
+      "neck": 0,
+      "left": 0,
+      "right": 0,
+      "body": 0
+    },
+    {
+      "t": 0.4,
+      "left": 1,
+      "right": 1,
+      "head": 0.6,
+      "neck": 0.3
+    },
+    {
+      "t": 0.8,
+      "left": 0.65,
+      "right": 0.65,
+      "head": 0.2
+    },
+    {
+      "t": 1.15,
+      "left": 1,
+      "right": 1,
+      "head": 0.6
+    },
+    {
+      "t": 1.5,
+      "left": 0.65,
+      "right": 0.65,
+      "head": 0.2
+    },
+    {
+      "t": 1.85,
+      "left": 1,
+      "right": 1,
+      "head": 0.6,
+      "body": 0.4
+    },
+    {
+      "t": 2.2,
+      "left": 0.7,
+      "right": 0.7,
+      "head": 0.3
+    },
+    {
+      "t": 2.6,
+      "head": 0,
+      "neck": 0,
+      "left": 0,
+      "right": 0,
+      "body": 0
+    }
+  ]
+}

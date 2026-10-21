@@ -17,7 +17,8 @@ description: "Use when the user says /tiny-agent or asks the desk robot to dance
 | 动一下 / 看我一眼 / 开始干活 | `te.mjs anim thinking` | 单个姿态，取值见下 |
 | 说句话 / 念一下 | `te.mjs say "文本" [--pose talking] [--voice 名字]` | 本地 TTS → `/play`，约 1 s 出 1 s 音频 |
 | 讲个故事 | `te.mjs story [--id 1\|2\|3]` | 三个内置短故事，75–90 字 |
-| 跳个舞 / 庆祝一下 / 鞠个躬 | `te.mjs dance [--id groove\|celebrate\|bow] [--seconds N]` | 姿态序列，默认约 8 s |
+| 跳个舞 / 庆祝一下 / 鞠个躬 | `te.mjs dance [--id groove\|celebrate\|bow] [--seconds N]` | 固件自带姿态拼的，默认约 8 s |
+| 欢呼 / 挥手 / 点头 / 伸懒腰 / 自编动作 | `choreo.mjs <名字>` | 关节级编排，见下节；`--list` 看全部 |
 | 统计用量 / 今天用了多久 | `te.mjs stats [--days 7]` | 命令数、语音秒数、姿态分布、活跃时长 |
 | 还在不在 / 状态 | `te.mjs status` | 版本、IP、RSSI、在线时长 |
 
@@ -28,6 +29,46 @@ description: "Use when the user says /tiny-agent or asks the desk robot to dance
 1. **不要边放音边跳舞。** 固件只有一个 `WebServer`，`POST /play` 会占住连接直到音频播完，这期间的 `/anim` 全部排队或超时。要么跳舞（姿态序列），要么说话。
 2. **不要调** `/settings`、`/settings/reset`、`/test/*`、`/setup/*`。会改配置、抹 WiFi、让五个舵机全速来回甩。
 3. **姿态有时长**：`attention` 保持约 1 分钟，`dead` 一直保持。编舞时避开它们，或明确要用户等。
+
+## 关节级编排：自己设计动作（`tools/choreo.mjs`）
+
+固件里每个姿态都是**写死的 C++ 动画**（`src/animation/*.cpp`），不能上传新动画。但 `/test/servo` 能单独驱动关节，所以动作可以在这边编排：
+
+| # | 关节 | 这台设备的标定范围 | 跨度 |
+|---|---|---|---|
+| 0 | head 头 | 60–130° | 70° |
+| 1 | neck 颈 | 40–130° | 90° |
+| 2 | left 左臂 | 45–135° | 90° |
+| 3 | right 右臂 | 35–125° | 90° |
+| 4 | body 身体 | 40–130° | 90° |
+
+姿态坐标 **−1..+1**：0 = 中位，(min+max)/2 ± span/2。**+1 是抬起还是放下取决于装配方向**；第一次跑发现反了，加 `--flip left,right` 翻符号。
+
+物理上限（固件常量，别想着绕过）：
+
+- 最大角速度 **140 °/s**（`SERVO_MAX_SPEED_DEG_S`）→ 90° 跨度至少 0.65 s
+- 每个 HTTP 请求约 **95 ms**（首个约 300 ms），所以**一帧 3 个关节 ≈ 0.3 s、5 个关节 ≈ 0.5 s**
+- 角度被 `clampServoAngle` 钳到标定范围，发超了也不会甩出安全区
+- 没有手指/腕关节：所谓"拍手"只能让两条手臂靠近，做不到真击掌
+
+编排文件 `choreos/<名字>.json`，`t` 是**最短**间隔（实际会被上面两条限制拉长）：
+
+```json
+{ "name": "cheer", "frames": [
+  { "t": 0.0, "head": 0, "left": 0, "right": 0 },
+  { "t": 0.4, "head": 0.6, "left": 1, "right": 1 },
+  { "t": 2.6, "head": 0, "left": 0, "right": 0 } ] }
+```
+
+用户要新动作时的流程：
+
+1. 拆成 **3–8 个关键帧**，想清楚每个关节往哪边、到什么程度。用 0.4–0.9 比全 ±1 好看，也不会顶着限位。
+2. 写 `choreos/<名字>.json`，`description` 写一句中文，`--list` 会列出来。
+3. `node tools/choreo.mjs <名字> --dry-run` 核对角度（`0` 必须落在中位上）。
+4. 真跑一次让用户看；方向反了加 `--flip`。
+5. 想连动作带说话，先播动作再 `te.mjs say`——不能同时（见硬约束 1）。
+
+已有：`cheer` 欢呼、`wave` 挥手、`bow` 鞠躬、`nod` 点头、`lookaround` 左顾右盼、`stretch` 伸懒腰。
 
 ## 用量统计的口径
 

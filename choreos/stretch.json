@@ -1,0 +1,34 @@
+{
+  "name": "stretch",
+  "description": "伸懒腰：慢慢举臂、仰头、停住、放下，约 3.4 s",
+  "frames": [
+    {
+      "t": 0,
+      "head": 0,
+      "neck": 0,
+      "left": 0,
+      "right": 0
+    },
+    {
+      "t": 1.2,
+      "left": 1,
+      "right": 1,
+      "head": 0.7,
+      "neck": 0.4
+    },
+    {
+      "t": 2.2,
+      "left": 1,
+      "right": 1,
+      "head": 0.7,
+      "neck": 0.4
+    },
+    {
+      "t": 3.4,
+      "head": 0,
+      "neck": 0,
+      "left": 0,
+      "right": 0
+    }
+  ]
+}
