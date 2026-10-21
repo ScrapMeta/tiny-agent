@@ -1,0 +1,39 @@
+{
+  "label": "main-261adc2",
+  "version": "v0.2.0-28-g261adc2",
+  "commit": "261adc2",
+  "commit_subject": "chore(cli): release tiny-engineer CLI 0.3.0",
+  "built_at": "2026-10-21",
+  "env": "esp32-c3-devkitm-1",
+  "toolchain": "riscv32-esp-elf 14.2.0 (esp-14.2.0_20260121)",
+  "arduino_core": "3.3.12",
+  "platform": "pioarduino/espressif32 55.3.312",
+  "size": {
+    "app_bytes": 1379057,
+    "app_max": 2162688,
+    "app_pct": 63.8,
+    "ram_pct": 16.6
+  },
+  "features_vs_v0_2_0": [
+    "POST /play and /play/<pose> — stream a 16-bit mono 22050 Hz WAV while an animation runs",
+    "PUT /settings/wifi — up to 5 saved networks, migrated from the single wifi_ssid/wifi_pass pair",
+    "POST /servos/park — park joints and hold PWM (used before flashing)",
+    "guided servo calibration (setup wizard)",
+    "USB serial control mode (#73/#83)",
+    "web UI rebuilt in Preact/TypeScript, embedded gzipped in the app",
+    "route table with explicit access levels (Public / Token / Configured / Setup)"
+  ],
+  "files": {
+    "firmware.bin": { "bytes": 1452336, "flash_at": "0x10000", "target": "app" },
+    "bootloader.bin": { "bytes": 19536, "flash_at": "0x0" },
+    "partitions.bin": { "bytes": 3072, "flash_at": "0x8000" },
+    "littlefs.bin": { "bytes": 1900544, "flash_at": "0x220000", "target": "filesystem (assets: bell/welcome/attention/error/abort/dead.wav)" },
+    "firmware.factory.bin": { "bytes": 1517872, "flash_at": "0x0", "target": "merged image for web flashers" }
+  },
+  "checksums": "SHA256SUMS.txt",
+  "flash": {
+    "usb": "pio run -t upload (the post-script also uploads the filesystem)",
+    "partition_note": "partitions.csv keeps nvs at 0x9000/0x5000, so servo calibration, token and WiFi survive. Do not use -t erase.",
+    "ota_caveat": "the [env:ota] table moves LittleFS to 0x310000 — reflash the filesystem too, or the UI/assets disappear"
+  }
+}

@@ -18,7 +18,7 @@
 | **Claude Code plugin/marketplace** | 让 skill + hooks 一起分发，而不是两条路 | 中 |
 | **`te` 薄命令** | `te anim typing` / `te say clip.wav`，把 REST 细节收进一处 | 低 |
 | **Cua / 无终端宿主** | 只有聊天窗口的 agent 目前完全接不了 | 高 |
-| **固件升级到有 `/play` 的版本** | 说话能力是本项目最想要但当前缺的功能 | 低（刷机） |
+| **固件升级到有 `/play` 的版本** | 说话能力是本项目最想要但当前缺的功能 | ✅ 已编译 `main-261adc2`，待刷机验证 |
 | **每台唯一 hostname 的烧录脚本** | 5 台批量时 `tiny-engineer.local` 会撞名 | 低 |
 | **CI：对 mock 设备跑 install/undo** | 防止改坏别人的配置 | 中 |
 

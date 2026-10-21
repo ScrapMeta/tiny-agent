@@ -44,6 +44,8 @@ agent 会：取包 → 探测设备 → 按自己的宿主写配置 → 自验�
 | `access_token` | **未设置** —— 同网段任何人都能用，且能 `POST /settings/reset` 把 WiFi 抹掉 |
 | 已保存 WiFi | 只有 1 个（新固件支持 5 个） |
 
+> **有 `POST /play` 的固件已经编好了**：`docs/firmware/main-261adc2/`（版本 `v0.2.0-28-g261adc2`，来自上游 `main`，从未发布过 tag）。它同时带来 5 个 WiFi 记忆、`POST /servos/park`、引导式标定、USB 串口控制。刷机与复现步骤见 [`docs/firmware/BUILD.md`](docs/firmware/BUILD.md) —— 刷 app 不会丢舵机标定。
+
 ## 三十秒接入
 
 ```bash
