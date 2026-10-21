@@ -68,7 +68,9 @@ description: "Use when the user says /tiny-agent or asks the desk robot to dance
 4. 真跑一次让用户看；方向反了加 `--flip`。
 5. 想连动作带说话，先播动作再 `te.mjs say`——不能同时（见硬约束 1）。
 
-已有：`cheer` 欢呼、`wave` 挥手、`bow` 鞠躬、`nod` 点头、`lookaround` 左顾右盼、`stretch` 伸懒腰。
+已有：`cheer` 欢呼、`wave` 挥手、`bow` 鞠躬、`nod` 点头、`lookaround` 左顾右盼、`stretch` 伸懒腰、`angry` 生气砸键盘。
+
+**反向甩臂的间隔别小于 0.5 秒**：从一端打到另一端（约 67°）在 140°/s 下要 0.48 秒，中途发新目标会把插值重置，动作只剩下小幅抖动。所以"砸键盘"这种来回动作，每一下之间留 0.5–0.55 秒才看得清。
 
 ## 用量统计的口径
 
