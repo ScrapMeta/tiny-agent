@@ -26,7 +26,7 @@ description: "Use when the user says /tiny-agent or asks the desk robot to dance
 
 ## 三条硬约束（违反会出问题）
 
-1. **不要边放音边跳舞。** 固件只有一个 `WebServer`，`POST /play` 会占住连接直到音频播完，这期间的 `/anim` 全部排队或超时。要么跳舞（姿态序列），要么说话。
+1. **播放期间发不进 HTTP，但机器人自己在动。** 固件只有一个 `WebServer`，`POST /play` 在整个音频流期间占住 `loop()`（`play_handlers.cpp` 每两次写 I2S 之间只泵 `tickRobot()`，不泵 `pollHttpServer()`），所以这期间的 `/anim`、`/test/servo` 全部超时（实测 3 s 超时）。**但这不等于"说话时不动"**：`/play` 默认挂 `talking` 动画，`audioMotionFeed()` 把实时音量喂给它，头、颈、身体会跟着声音动。所以不要边播边发姿态指令；想要音画同步的自编舞蹈，只能进固件写动画（见文末）。
 2. **不要调** `/settings`、`/settings/reset`、`/test/*`、`/setup/*`。会改配置、抹 WiFi、让五个舵机全速来回甩。
 3. **姿态有时长**：`attention` 保持约 1 分钟，`dead` 一直保持。编舞时避开它们，或明确要用户等。
 
