@@ -30,6 +30,23 @@ cmd.exe /c C:\\pio\\build.bat -t buildfs   # 需要 littlefs.bin 时
 
 ## 三个 Windows 坑（都踩过了）
 
+0. **先有这个批处理**（`C:\pio\build.bat`，把路径换成你自己的）：
+
+```bat
+@echo off
+set "MSYSTEM="
+set "PLATFORMIO_CORE_DIR=C:\pio"
+set "HTTP_PROXY=http://127.0.0.1:7897"
+set "HTTPS_PROXY=http://127.0.0.1:7897"
+set "npm_config_proxy=http://127.0.0.1:7897"
+set "npm_config_https_proxy=http://127.0.0.1:7897"
+set "PATH=C:\pio\packages\toolchain-riscv32-esp\riscv32-esp-elf\bin;%PATH%"
+cd /d D:\projects\tiny-agent\tiny-engineer
+"C:\Users\Intel\.platformio\penv\Scripts\pio.exe" run %*
+```
+
+然后 `cmd.exe /c C:\pio\build.bat`（在 git-bash 里要加 `MSYS2_ARG_CONV_EXCL='*'` 防止路径被改写）。
+
 1. **PlatformIO Core 太旧**
    `esp-idf` 平台要求 Core ≥ 6.2.0，机器上是 6.1.15，报
    `IncompatiblePlatform: … depends on PlatformIO Core >=6.2.0`。
