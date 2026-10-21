@@ -47,9 +47,36 @@ const CFG = {
   dryRun: flag("dry-run"),
   undo: flag("undo"),
   purge: flag("purge"), // with --undo: also delete the hook script, state dir and log
+  withSkill: flag("with-skill"), // also drop skills/tiny-agent into the host skill dir
 };
 
 const log = (msg) => process.stderr.write(msg + "\n");
+
+const SKILL_SRC = path.join(path.dirname(new URL(import.meta.url).pathname.replace(/^\/([A-Za-z]:)/, "$1")), "..", "skills", "tiny-agent", "SKILL.md");
+
+/** copy skills/tiny-agent into an agent's skill dir (idempotent, undo removes the dir) */
+function installSkill(parentDir) {
+  const dstDir = path.join(parentDir, "tiny-agent");
+  const dst = path.join(dstDir, "SKILL.md");
+  if (CFG.undo) {
+    if (fs.existsSync(dstDir) && !CFG.dryRun) {
+      fs.rmSync(dstDir, { recursive: true, force: true });
+      report.removed.push(dstDir);
+      show(dstDir);
+    }
+    return;
+  }
+  if (!fs.existsSync(SKILL_SRC)) {
+    fail(`skill source missing: ${SKILL_SRC}`);
+    return;
+  }
+  if (!CFG.dryRun) {
+    fs.mkdirSync(dstDir, { recursive: true });
+    fs.copyFileSync(SKILL_SRC, dst);
+  }
+  show(dst);
+  report.wrote.push(dst);
+}
 
 // ---------------------------------------------------------------- helpers
 
@@ -266,6 +293,7 @@ const adapters = {
       writeJson(file, cfg);
       show(".cursor/hooks.json");
       report.wrote.push(".cursor/hooks.json");
+      if (CFG.withSkill) installSkill(path.join(CFG.project, ".cursor", "skills"));
     },
   },
 
@@ -286,6 +314,9 @@ const adapters = {
       writeJson(file, cfg);
       show(".claude/settings.json");
       report.wrote.push(".claude/settings.json");
+      if (CFG.withSkill) {
+        installSkill(CFG.scope === "global" ? path.join(os.homedir(), ".claude", "skills") : path.join(CFG.project, ".claude", "skills"));
+      }
     },
   },
 
@@ -313,6 +344,7 @@ const adapters = {
       writeJson(file, cfg);
       show(".agents/hooks.json");
       report.wrote.push(".agents/hooks.json");
+      if (CFG.withSkill) log("  ! antigravity: no skill-dir convention — hooks only");
     },
   },
 
@@ -344,6 +376,7 @@ const adapters = {
       show(`${file} (notify, turn-end only)`);
       report.wrote.push("~/.codex/config.toml");
       log("  ! codex has no tool-level hooks: this only rings at turn end");
+      if (CFG.withSkill) log("  ! codex: no skill system — skipped (run te.mjs by hand)");
     },
   },
 
@@ -375,6 +408,7 @@ const adapters = {
       show(".gemini/settings.json");
       report.wrote.push(".gemini/settings.json");
       log("  ! gemini: keep >/dev/null on every command; check /hooks panel after install");
+      if (CFG.withSkill) installSkill(path.join(CFG.project, ".gemini", "skills"));
     },
   },
 
@@ -430,6 +464,7 @@ const adapters = {
         log("  ! 全局 hooks 对所有 profile 生效；profile 自己的 hooks 仍然会叠加（除重靠标记）");
       }
       log("  ! hermes: hand-declared hooks; a new script path needs the shell-hooks allowlist consent");
+      if (CFG.withSkill) installSkill(path.join(baseDir, "skills", "hardware"));
     },
   },
 };

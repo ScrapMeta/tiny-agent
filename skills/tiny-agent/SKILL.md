@@ -1,51 +1,61 @@
 ---
 name: tiny-agent
-description: "Use when driving the Tiny Engineer desk robot by intent (speak, nod, ring, go to sleep) rather than by lifecycle events."
+description: "Use when the user says /tiny-agent or asks the desk robot to dance, speak, tell a story, or report usage."
 ---
 
-# Tiny Engineer：按意图驱动
+# tiny-agent：让桌上的机器人做具体的事
 
-**钩子负责被动反应**（读文件就动、回合结束响铃），这个 skill 负责**主动表达**——你判断"这里该说话/该点头"的时候才用。
+用户说 `/tiny-agent 跳个舞`、`说句话`、`讲个故事`、`统计一下用量`，就是这份 skill。
+所有动作都落到一个命令上：`node tools/te.mjs <子命令>`（在 tiny-agent 仓库根目录跑）。
 
-机器人只认 HTTP：`POST http://<ip>/anim?name=<pose>`，2 秒超时，失败就算了，不要重试、不要因此卡住任务。
+机器人只认 HTTP；**它本身没有"跳舞""讲故事"这种能力**，都是这里拼出来的：舞蹈 = 姿态编排，说话 = 本地 TTS 转 22050 Hz WAV 推到 `POST /play`。
 
-## 什么时候用
+## 命令表
 
-| 场景 | 动作 |
-|---|---|
-| 要念一段话给用户听 | `POST /play`（**当前固件 v0.2.0 没有这个路由，会 404**；先 `curl /` 确认） |
-| 想强调"我在这儿" | `anim attention`（约 1 分钟的举手提示） |
-| 用户离开了 | `anim sleep`（闭眼 + 熄屏） |
-| 任务做完、想引人注意 | `anim ring`（一声铃） |
-| 需要用户拍板 | `anim attention` + 在聊天里提问 |
-| 出错、卡住 | `anim error` |
+| 用户说的 | 你执行 | 说明 |
+|---|---|---|
+| 动一下 / 看我一眼 / 开始干活 | `te.mjs anim thinking` | 单个姿态，取值见下 |
+| 说句话 / 念一下 | `te.mjs say "文本" [--pose talking] [--voice 名字]` | 本地 TTS → `/play`，约 1 s 出 1 s 音频 |
+| 讲个故事 | `te.mjs story [--id 1\|2\|3]` | 三个内置短故事，75–90 字 |
+| 跳个舞 / 庆祝一下 / 鞠个躬 | `te.mjs dance [--id groove\|celebrate\|bow] [--seconds N]` | 姿态序列，默认约 8 s |
+| 统计用量 / 今天用了多久 | `te.mjs stats [--days 7]` | 命令数、语音秒数、姿态分布、活跃时长 |
+| 还在不在 / 状态 | `te.mjs status` | 版本、IP、RSSI、在线时长 |
 
-**不要**用它做常规进度反馈——那是钩子的活，你每调一次就多一次 HTTP 和 1 秒的最小保持。
+姿态取值：`none typing reading thinking talking ring welcome attention error abort dead wakeup sleep`。
 
-## 怎么调
+## 三条硬约束（违反会出问题）
 
-```bash
-# 姿态
-curl -s --noproxy '*' -m 2 -X POST "http://192.168.70.196/anim?name=thinking" || true
+1. **不要边放音边跳舞。** 固件只有一个 `WebServer`，`POST /play` 会占住连接直到音频播完，这期间的 `/anim` 全部排队或超时。要么跳舞（姿态序列），要么说话。
+2. **不要调** `/settings`、`/settings/reset`、`/test/*`、`/setup/*`。会改配置、抹 WiFi、让五个舵机全速来回甩。
+3. **姿态有时长**：`attention` 保持约 1 分钟，`dead` 一直保持。编舞时避开它们，或明确要用户等。
 
-# 说一句话（需要新固件 + 16-bit mono 22050 Hz WAV）
-curl -s --noproxy '*' -m 30 -X POST http://192.168.70.196/play \
-  -H 'Content-Type: audio/wav' --data-binary @clip.wav
+## 用量统计的口径
+
+设备的 HTTP API **没有计数器**。`te.mjs stats` 统计的是"这台机器发出过的命令"：每次 `anim/say/story/dance` 都会追加一行到
+
+```
+Windows:    %LOCALAPPDATA%\tiny-agent\usage.jsonl
+mac/Linux:  ~/.local/state/tiny-agent/usage.jsonl
 ```
 
-设了口令就加 `-H "Authorization: Bearer $TINY_ENGINEER_TOKEN"`。
+所以它反映的是**我们从本机驱动它的量**，不是设备自己记的账；换台电脑就从零开始。这是设计选择，不要当成设备遥测。
 
-## 姿态取值
+## 失败怎么办
 
-`none` `typing` `reading` `thinking` `talking` `ring` `welcome` `attention` `error` `abort` `dead` `wakeup` `sleep`
+| 现象 | 处理 |
+|---|---|
+| `http 000` / 超时 | 机器人忙（正在放音频）或弱信号。等 2 秒重试**一次**，别连打 |
+| `http 503` | 机器人没联网（`wifi not configured`），停下来告诉用户 |
+| `http 401` | 设备设了口令，加 `--token` 或 `TINY_ENGINEER_TOKEN` |
+| `/play` 返回 `404` | 固件太老（v0.2.0 release 没有这个路由），指向 `docs/firmware/BUILD.md` |
 
-- `typing/reading/thinking/talking` 是**连续**的：不替换就一直跑；
-- `ring/welcome/attention/error/abort/dead/wakeup/sleep` 是一次性或保持型；
-- `none` 归位，2 秒后舵机断电（头会轻微下垂）。
+## 典型对话
 
-## 硬约束
+> 用户：/tiny-agent 讲个故事
+> 你：`node tools/te.mjs story --id 3` → 约 20 秒音频，机器人用 `talking` 姿态说完 → 回报"讲完了，约 20 秒"。
 
-1. 用 IP，不要 `*.local`。
-2. 不要 `POST /settings`、`/settings/reset`、`/test/*`、`/setup/*`。
-3. 一台机器人只有一条"正在工作"的姿态：你设了连续姿态，别人会被拒（网关）或互相顶掉（直连）。
-4. 机器人不在线不是错误：`|| true`，继续干活。
+> 用户：/tiny-agent 庆祝一下
+> 你：`node tools/te.mjs dance --id celebrate` → welcome → typing → ring（响铃）→ 归位，约 7 秒。
+
+> 用户：/tiny-agent 今天用了多久
+> 你：`node tools/te.mjs stats --days 1` → 报命令数、语音秒数、活跃分钟数，并说明口径。
