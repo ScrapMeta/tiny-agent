@@ -1,7 +1,8 @@
 #!/usr/bin/env bash
 # te-hook.sh — Hermes -> Tiny Engineer. Installed by scripts/install.mjs into
-# <hermes profile>/agent-hooks/te-hook.sh and wired to 7 lifecycle events in
-# that profile's config.yaml. See adapters/hermes.md.
+# <hermes profile>/agent-hooks/ (as te-hook.sh on a new machine, or as
+# bell-robot.sh when that path is already allowlisted) and wired to 7 lifecycle
+# events in that profile's config.yaml. See adapters/hermes.md.
 #
 # v3: same behaviour as v2, but builtins only (no date/sed/cat/wc forks) so a hook
 #     costs ~1 bash start + 1 curl instead of ~800 ms. Every pre_tool_call pays this.
